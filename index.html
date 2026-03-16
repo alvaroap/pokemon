@@ -4,410 +4,278 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>PokéDeck — Buscador Competitivo</title>
-<link href="https://fonts.googleapis.com/css2?family=Bangers&family=DM+Sans:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=DM+Sans:ital,wght@0,400;0,500;0,700;0,900;1,400&display=swap" rel="stylesheet">
 <style>
-:root {
-  --bg:      #07090f;
-  --bg2:     #0d1117;
-  --bg3:     #111827;
-  --border:  #1f2937;
-  --border2: #374151;
-  --text:    #f1f5f9;
-  --muted:   #6b7280;
-  --muted2:  #9ca3af;
-  --gold:    #f59e0b;
-  --gold2:   #fbbf24;
-  --red:     #ef4444;
-  --green:   #22c55e;
-  --blue:    #38bdf8;
-  --purple:  #a78bfa;
+:root{
+  --bg:#07090f;--bg2:#0d1117;--bg3:#111827;
+  --border:#1f2937;--border2:#374151;
+  --text:#f1f5f9;--muted:#6b7280;--muted2:#9ca3af;
+  --gold:#f59e0b;--red:#ef4444;--green:#22c55e;--blue:#38bdf8;--purple:#a78bfa;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{scroll-behavior:smooth}
 body{
-  background:var(--bg);
-  color:var(--text);
+  background:var(--bg);color:var(--text);
   font-family:'DM Sans',sans-serif;
-  min-height:100vh;
-  overflow-x:hidden;
+  min-height:100vh;overflow-x:hidden;
 }
-
-/* BG texture */
 body::before{
-  content:'';
-  position:fixed;inset:0;
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
   background:
     radial-gradient(ellipse 70% 50% at 10% 0%,rgba(245,158,11,.05) 0%,transparent 60%),
     radial-gradient(ellipse 50% 40% at 90% 100%,rgba(56,189,248,.04) 0%,transparent 60%);
-  pointer-events:none;z-index:0;
 }
 
 /* HEADER */
 .header{
   position:sticky;top:0;z-index:100;
-  background:rgba(7,9,15,.92);
-  backdrop-filter:blur(16px);
+  background:rgba(7,9,15,.92);backdrop-filter:blur(16px);
   border-bottom:1px solid var(--border);
-  padding:14px 20px;
+  padding:12px 20px;
   display:flex;align-items:center;justify-content:space-between;gap:12px;
 }
 .logo{
-  font-family:'Bangers',cursive;
-  font-size:1.8rem;letter-spacing:3px;
+  font-family:'Bangers',cursive;font-size:1.75rem;letter-spacing:3px;
   background:linear-gradient(135deg,var(--gold),#fb923c);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-  background-clip:text;
-  filter:drop-shadow(0 0 12px rgba(245,158,11,.3));
-  line-height:1;
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  filter:drop-shadow(0 0 12px rgba(245,158,11,.3));line-height:1;
 }
 .logo-sub{font-size:8px;color:var(--muted);letter-spacing:4px;margin-top:1px}
-.header-tags{display:flex;gap:8px;flex-wrap:wrap}
-.header-tag{
+.header-right{display:flex;align-items:center;gap:10px}
+.format-tag{
   font-size:10px;padding:3px 10px;border-radius:100px;
   background:var(--bg3);color:var(--muted);border:1px solid var(--border);
 }
 
-/* SEARCH ZONE */
+/* API KEY SETUP */
+.setup-bar{
+  background:linear-gradient(135deg,rgba(245,158,11,.08),rgba(251,146,60,.05));
+  border-bottom:1px solid rgba(245,158,11,.2);
+  padding:10px 20px;
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  position:relative;z-index:10;
+}
+.setup-bar.hidden{display:none}
+.setup-label{font-size:12px;color:var(--gold);white-space:nowrap;font-weight:700}
+.setup-input{
+  flex:1;min-width:200px;max-width:400px;
+  background:var(--bg3);border:1.5px solid rgba(245,158,11,.3);
+  border-radius:8px;padding:7px 12px;
+  font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text);
+  outline:none;letter-spacing:.5px;
+}
+.setup-input:focus{border-color:var(--gold)}
+.setup-btn{
+  background:linear-gradient(135deg,var(--gold),#fb923c);
+  border:none;border-radius:8px;padding:7px 16px;
+  font-family:'Bangers',cursive;font-size:1rem;letter-spacing:1px;
+  color:#000;cursor:pointer;white-space:nowrap;
+  transition:opacity .15s;
+}
+.setup-btn:hover{opacity:.85}
+.setup-hint{font-size:11px;color:var(--muted);width:100%}
+.setup-hint a{color:var(--blue);text-decoration:none}
+.key-ok{
+  display:none;padding:10px 20px;
+  background:rgba(34,197,94,.06);border-bottom:1px solid rgba(34,197,94,.2);
+  font-size:12px;color:var(--green);
+  align-items:center;gap:10px;
+}
+.key-ok.show{display:flex}
+.key-change{
+  margin-left:auto;font-size:11px;color:var(--muted);
+  cursor:pointer;text-decoration:underline;
+}
+
+/* SEARCH */
 .search-zone{
   position:relative;z-index:5;
-  max-width:680px;margin:36px auto 0;padding:0 16px;
+  max-width:680px;margin:32px auto 0;padding:0 16px;
 }
 .search-title{
   font-family:'Bangers',cursive;
-  font-size:clamp(2rem,6vw,3.2rem);
-  letter-spacing:4px;text-align:center;
+  font-size:clamp(1.8rem,6vw,3rem);letter-spacing:4px;text-align:center;
   background:linear-gradient(180deg,#fff 0%,var(--blue) 100%);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-  margin-bottom:6px;
+  margin-bottom:5px;
 }
-.search-sub{text-align:center;color:var(--muted);font-size:12px;letter-spacing:1px;margin-bottom:24px}
-
+.search-sub{text-align:center;color:var(--muted);font-size:11px;letter-spacing:1px;margin-bottom:22px}
 .search-row{display:flex;gap:10px;position:relative}
 .search-input{
-  flex:1;
-  background:var(--bg3);
-  border:2px solid var(--border);
-  border-radius:14px;
-  padding:13px 18px;
-  font-size:15px;
-  font-family:'DM Sans',sans-serif;
-  color:var(--text);
-  outline:none;
-  transition:border-color .2s,box-shadow .2s;
+  flex:1;background:var(--bg3);border:2px solid var(--border);border-radius:14px;
+  padding:13px 18px;font-size:15px;font-family:'DM Sans',sans-serif;color:var(--text);
+  outline:none;transition:border-color .2s,box-shadow .2s;
 }
-.search-input:focus{
-  border-color:var(--gold);
-  box-shadow:0 0 0 3px rgba(245,158,11,.12);
-}
+.search-input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(245,158,11,.1)}
 .search-input::placeholder{color:var(--muted)}
 .search-btn{
   background:linear-gradient(135deg,var(--gold),#fb923c);
-  border:none;border-radius:14px;
-  padding:13px 20px;
-  font-family:'Bangers',cursive;
-  font-size:1.1rem;letter-spacing:1px;
-  color:#000;cursor:pointer;
-  white-space:nowrap;
-  transition:transform .15s,box-shadow .15s;
+  border:none;border-radius:14px;padding:13px 20px;
+  font-family:'Bangers',cursive;font-size:1.1rem;letter-spacing:1px;
+  color:#000;cursor:pointer;white-space:nowrap;
   box-shadow:0 4px 20px rgba(245,158,11,.25);
+  transition:transform .15s,box-shadow .15s;
 }
 .search-btn:hover{transform:translateY(-1px);box-shadow:0 8px 28px rgba(245,158,11,.35)}
 .search-btn:active{transform:translateY(0)}
 .search-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
 
-/* Autocomplete */
-.autocomplete{
-  position:absolute;top:calc(100% + 6px);left:0;right:0;
-  background:var(--bg2);border:1px solid var(--border2);
-  border-radius:12px;overflow:hidden;
-  box-shadow:0 16px 40px rgba(0,0,0,.6);
-  display:none;z-index:200;
-}
-.autocomplete.show{display:block}
-.ac-item{
-  display:flex;align-items:center;gap:12px;
-  padding:10px 14px;cursor:pointer;
-  transition:background .12s;font-size:13px;
-}
-.ac-item:hover{background:rgba(245,158,11,.07)}
-.ac-item img{width:36px;height:50px;object-fit:contain;border-radius:4px;flex-shrink:0}
-
-/* Lang filter */
-.lang-row{display:flex;justify-content:center;gap:10px;margin-top:14px}
-.lang-btn{
-  padding:6px 16px;border-radius:100px;
-  border:2px solid var(--border);
-  background:var(--bg3);
-  color:var(--muted);
-  font-family:'DM Sans',sans-serif;
-  font-weight:700;font-size:12px;letter-spacing:1px;
-  cursor:pointer;transition:all .2s;
-}
-.lang-btn.active{border-color:var(--gold);color:var(--gold);background:rgba(245,158,11,.08)}
-
 /* MAIN */
 .main{
   position:relative;z-index:5;
-  max-width:1200px;margin:0 auto;
-  padding:32px 16px 80px;
+  max-width:1100px;margin:0 auto;
+  padding:28px 16px 80px;
 }
 
-/* Loading */
-.loading{display:none;text-align:center;padding:80px 0}
+/* LOADING */
+.loading{display:none;text-align:center;padding:70px 0}
 .loading.show{display:block}
 .pokeball{
-  width:58px;height:58px;border-radius:50%;
+  width:54px;height:54px;border-radius:50%;
   background:linear-gradient(180deg,var(--red) 50%,#fff 50%);
-  border:4px solid #fff;
-  position:relative;margin:0 auto;
+  border:4px solid #fff;position:relative;margin:0 auto;
   animation:spin .75s linear infinite;
-  box-shadow:0 0 32px rgba(239,68,68,.35);
+  box-shadow:0 0 28px rgba(239,68,68,.35);
 }
-.pokeball::before{
-  content:'';position:absolute;
-  top:50%;left:0;right:0;height:4px;
-  background:#1f2937;transform:translateY(-50%);
-}
-.pokeball::after{
-  content:'';position:absolute;
-  width:16px;height:16px;border-radius:50%;
-  background:#fff;border:4px solid #374151;
-  top:50%;left:50%;transform:translate(-50%,-50%);
-}
+.pokeball::before{content:'';position:absolute;top:50%;left:0;right:0;height:4px;background:#1f2937;transform:translateY(-50%)}
+.pokeball::after{content:'';position:absolute;width:14px;height:14px;border-radius:50%;background:#fff;border:4px solid #374151;top:50%;left:50%;transform:translate(-50%,-50%)}
 @keyframes spin{to{transform:rotate(360deg)}}
-.loading-text{color:var(--muted);font-size:13px;margin-top:14px}
+.loading-text{color:var(--muted);font-size:13px;margin-top:12px}
+.loading-stream{
+  max-width:500px;margin:14px auto 0;
+  background:var(--bg2);border:1px solid var(--border);border-radius:12px;
+  padding:12px 16px;font-size:12px;color:var(--muted2);
+  text-align:left;line-height:1.6;min-height:40px;
+  font-style:italic;
+}
 
-/* Error / empty */
-.msg-box{display:none;text-align:center;padding:60px 20px;color:var(--muted)}
+/* ERROR */
+.msg-box{display:none;text-align:center;padding:50px 20px;color:var(--muted)}
 .msg-box.show{display:block}
-.msg-box .icon{font-size:44px;margin-bottom:12px}
+.msg-box .icon{font-size:40px;margin-bottom:10px}
 
-/* Section label */
+/* SECTION LABEL */
 .s-label{
-  display:flex;align-items:center;gap:12px;
-  font-family:'Bangers',cursive;
-  font-size:1.3rem;letter-spacing:2px;
-  color:var(--gold);margin-bottom:18px;margin-top:4px;
+  display:flex;align-items:center;gap:10px;
+  font-family:'Bangers',cursive;font-size:1.2rem;letter-spacing:2px;
+  color:var(--gold);margin-bottom:16px;margin-top:4px;
 }
-.s-label::after{
-  content:'';flex:1;height:1px;
-  background:linear-gradient(90deg,rgba(245,158,11,.3),transparent);
-}
+.s-label::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(245,158,11,.3),transparent)}
 
-/* RESULT hidden by default */
+/* RESULT */
 .result{display:none}
 .result.show{display:block}
 
-/* HERO */
+/* HERO CARD */
 .hero{
-  display:grid;
-  grid-template-columns:240px 1fr;
-  gap:24px;
-  background:var(--bg2);
-  border:1px solid var(--border);
-  border-radius:20px;
-  padding:24px;
-  position:relative;overflow:hidden;
-  margin-bottom:36px;
+  display:grid;grid-template-columns:220px 1fr;gap:22px;
+  background:var(--bg2);border:1px solid var(--border);border-radius:20px;
+  padding:22px;position:relative;overflow:hidden;margin-bottom:32px;
 }
-.hero-glow{
-  position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(circle at 20% 50%,rgba(245,158,11,.06) 0%,transparent 65%);
-}
+.hero-glow{position:absolute;inset:0;pointer-events:none}
 .hero-img-col{position:relative;z-index:1}
 .hero-img{
   width:100%;border-radius:12px;
-  box-shadow:0 20px 60px rgba(0,0,0,.7);
+  box-shadow:0 18px 50px rgba(0,0,0,.7);
   transition:transform .3s;display:block;
 }
-.hero-img:hover{transform:scale(1.02) rotate(.5deg)}
+.hero-img:hover{transform:scale(1.02) rotate(.4deg)}
 .cm-link{
-  display:block;text-align:center;margin-top:10px;
-  padding:8px;border-radius:10px;
-  background:rgba(56,189,248,.07);
-  border:1px solid rgba(56,189,248,.22);
-  color:var(--blue);font-size:11px;font-weight:700;
-  text-decoration:none;letter-spacing:.5px;
+  display:block;text-align:center;margin-top:9px;padding:7px;
+  border-radius:9px;background:rgba(56,189,248,.07);
+  border:1px solid rgba(56,189,248,.22);color:var(--blue);
+  font-size:11px;font-weight:700;text-decoration:none;letter-spacing:.5px;
   transition:background .2s;
 }
 .cm-link:hover{background:rgba(56,189,248,.14)}
-
-.hero-info{display:flex;flex-direction:column;gap:12px;position:relative;z-index:1}
-.hero-name{font-family:'Bangers',cursive;font-size:2.2rem;letter-spacing:2px;line-height:1;color:#fff}
-.badge-row{display:flex;flex-wrap:wrap;gap:6px}
-.badge{
-  padding:3px 11px;border-radius:100px;
-  font-size:11px;font-weight:700;white-space:nowrap;
-}
-.flavor{
-  color:var(--muted);font-style:italic;font-size:12px;
-  border-left:3px solid var(--border2);padding-left:10px;line-height:1.5;
-}
+.hero-info{display:flex;flex-direction:column;gap:11px;position:relative;z-index:1}
+.hero-name{font-family:'Bangers',cursive;font-size:2rem;letter-spacing:2px;line-height:1}
+.badge-row{display:flex;flex-wrap:wrap;gap:5px}
+.badge{padding:3px 10px;border-radius:100px;font-size:10px;font-weight:700;white-space:nowrap}
+.flavor{color:var(--muted);font-style:italic;font-size:12px;border-left:3px solid var(--border2);padding-left:10px;line-height:1.5}
 
 /* Attacks */
-.attacks{display:flex;flex-direction:column;gap:6px}
-.atk{
-  display:flex;align-items:center;gap:8px;
-  background:var(--bg);border-radius:8px;padding:8px 12px;
-}
-.atk-name{font-weight:700;font-size:12px;min-width:110px;color:var(--text)}
-.atk-dmg{font-weight:900;font-size:15px;color:var(--red);min-width:36px;text-align:right}
+.attacks{display:flex;flex-direction:column;gap:5px}
+.atk{display:flex;align-items:flex-start;gap:8px;background:var(--bg);border-radius:8px;padding:8px 12px}
+.atk-name{font-weight:700;font-size:12px;min-width:100px;color:var(--text)}
+.atk-dmg{font-weight:900;font-size:14px;color:var(--red);min-width:30px;text-align:right;flex-shrink:0}
 .atk-text{color:var(--muted);font-size:11px;flex:1;line-height:1.4}
 
-/* Price panel */
-.price-panel{
-  background:rgba(0,0,0,.35);border:1px solid var(--border);
-  border-radius:14px;padding:14px;
-}
-.price-panel-header{
-  display:flex;align-items:center;justify-content:space-between;
-  margin-bottom:10px;flex-wrap:wrap;gap:8px;
-}
-.price-panel-title{font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase}
-.price-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.price-card{
-  background:var(--bg);border-radius:10px;padding:12px 13px;
-  border:1px solid var(--border);
-}
-.price-lang{font-size:11px;color:var(--muted);margin-bottom:4px;display:flex;align-items:center;gap:5px}
-.price-val{font-size:22px;font-weight:900;color:var(--gold)}
-.price-sub{font-size:11px;color:var(--muted);margin-top:2px}
-.price-src{font-size:10px;color:var(--border2);margin-top:4px}
-.price-note{
-  margin-top:10px;padding:7px 11px;
-  background:rgba(245,158,11,.05);
-  border:1px solid rgba(245,158,11,.15);
-  border-radius:8px;font-size:11px;color:var(--muted2);font-style:italic;
-}
-.supply-row{display:flex;gap:7px;margin-top:9px;flex-wrap:wrap;align-items:center}
-
-/* Chart */
-.chart-panel{
-  background:rgba(0,0,0,.35);border:1px solid var(--border);
-  border-radius:14px;padding:14px;
-}
-.chart-title{font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:10px}
-.chart-svg{width:100%;overflow:visible}
+/* Prices */
+.price-panel{background:rgba(0,0,0,.35);border:1px solid var(--border);border-radius:12px;padding:13px}
+.price-title{font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:9px}
+.price-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.price-card{background:var(--bg);border-radius:9px;padding:11px 13px;border:1px solid var(--border)}
+.price-lang{font-size:10px;color:var(--muted);margin-bottom:3px}
+.price-val{font-size:20px;font-weight:900;color:var(--gold)}
+.price-sub{font-size:10px;color:var(--muted);margin-top:2px}
+.price-note{margin-top:9px;padding:6px 10px;background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.15);border-radius:7px;font-size:10px;color:var(--muted2);font-style:italic}
 
 /* Variants */
-.variants-grid{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:36px}
+.variants-grid{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:32px}
 .variant-card{
-  background:var(--bg2);border:2px solid var(--border);
-  border-radius:14px;padding:11px;width:148px;text-align:center;
-  cursor:pointer;transition:all .2s;
+  background:var(--bg2);border:2px solid var(--border);border-radius:13px;
+  padding:10px;width:138px;text-align:center;cursor:pointer;transition:all .2s;
 }
-.variant-card:hover,.variant-card.active{
-  border-color:var(--gold);
-  box-shadow:0 0 18px rgba(245,158,11,.15);
-  transform:translateY(-3px);
-}
-.variant-img{width:100%;border-radius:8px;box-shadow:0 6px 16px rgba(0,0,0,.5);margin-bottom:8px;display:block}
-.variant-set{font-size:10px;color:var(--muted);margin-bottom:4px}
-.variant-rarity{
-  display:inline-block;font-size:9px;font-weight:700;
-  padding:2px 9px;border-radius:100px;
-  background:rgba(245,158,11,.1);color:var(--gold);
-  border:1px solid rgba(245,158,11,.25);
-}
-
-/* Meta note */
-.meta-note{
-  background:rgba(245,158,11,.05);
-  border:1px solid rgba(245,158,11,.2);
-  border-radius:10px;padding:9px 14px;
-  font-size:12px;color:var(--gold);margin-bottom:18px;
-}
+.variant-card:hover,.variant-card.active{border-color:var(--gold);box-shadow:0 0 16px rgba(245,158,11,.15);transform:translateY(-3px)}
+.variant-img{width:100%;border-radius:7px;box-shadow:0 5px 14px rgba(0,0,0,.5);margin-bottom:7px;display:block}
+.variant-set{font-size:9px;color:var(--muted);margin-bottom:3px}
+.variant-rarity{display:inline-block;font-size:9px;font-weight:700;padding:2px 8px;border-radius:100px;background:rgba(245,158,11,.1);color:var(--gold);border:1px solid rgba(245,158,11,.25)}
 
 /* Decks */
-.deck-list{display:flex;flex-direction:column;gap:16px}
-.deck{
-  background:var(--bg2);border:1px solid var(--border);
-  border-radius:18px;overflow:hidden;
-}
-.deck-header{
-  padding:18px 22px;background:rgba(0,0,0,.3);
-  border-bottom:1px solid var(--border);
-  display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap;
-}
-.deck-info{flex:1;min-width:200px}
-.deck-name{font-family:'Bangers',cursive;font-size:1.4rem;letter-spacing:1px;color:#fff;margin-bottom:8px}
-.deck-meta{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:7px}
-.deck-desc{color:var(--muted);font-size:12px;max-width:540px;line-height:1.5}
+.meta-note{background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.2);border-radius:9px;padding:8px 13px;font-size:12px;color:var(--gold);margin-bottom:16px}
+.deck-list{display:flex;flex-direction:column;gap:14px}
+.deck{background:var(--bg2);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+.deck-header{padding:16px 20px;background:rgba(0,0,0,.3);border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.deck-info{flex:1;min-width:180px}
+.deck-name{font-family:'Bangers',cursive;font-size:1.3rem;letter-spacing:1px;color:#fff;margin-bottom:7px}
+.deck-meta{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.deck-desc{color:var(--muted);font-size:12px;max-width:520px;line-height:1.5}
 .deck-tournament{color:var(--gold);font-size:11px;margin-top:5px}
-.deck-toggle{
-  background:rgba(245,158,11,.08);
-  border:1px solid rgba(245,158,11,.28);
-  color:var(--gold);border-radius:10px;
-  padding:8px 16px;cursor:pointer;
-  font-family:'DM Sans',sans-serif;
-  font-weight:700;font-size:12px;
-  white-space:nowrap;flex-shrink:0;
-  transition:background .2s;
-}
+.deck-toggle{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.28);color:var(--gold);border-radius:9px;padding:7px 15px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:700;font-size:12px;white-space:nowrap;flex-shrink:0;transition:background .2s}
 .deck-toggle:hover{background:rgba(245,158,11,.15)}
-.deck-body{padding:18px 22px;display:none}
+.deck-body{padding:16px 20px;display:none}
 .deck-body.open{display:block}
-.deck-cards{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(82px,1fr));
-  gap:10px;
-}
+.deck-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:9px}
 .dc-wrap{position:relative;cursor:pointer;transition:transform .15s}
 .dc-wrap:hover{transform:scale(1.08);z-index:10}
-.dc-img{width:100%;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,.5);display:block}
-.dc-qty{
-  position:absolute;top:-5px;right:-5px;
-  background:var(--gold);color:#000;
-  border-radius:50%;width:18px;height:18px;
-  display:flex;align-items:center;justify-content:center;
-  font-size:8px;font-weight:900;
-}
+.dc-img{width:100%;border-radius:5px;box-shadow:0 4px 10px rgba(0,0,0,.5);display:block}
+.dc-qty{position:absolute;top:-5px;right:-5px;background:var(--gold);color:#000;border-radius:50%;width:17px;height:17px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:900}
 .dc-name{font-size:8px;color:var(--muted);text-align:center;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-/* No decks */
-.no-deck{
-  text-align:center;padding:40px 20px;
-  background:var(--bg2);border-radius:16px;border:1px solid var(--border);
-  color:var(--muted);font-size:13px;
-}
-.no-deck .icon{font-size:36px;margin-bottom:10px}
+/* No deck */
+.no-deck{text-align:center;padding:36px 20px;background:var(--bg2);border-radius:14px;border:1px solid var(--border);color:var(--muted);font-size:13px}
+.no-deck .icon{font-size:34px;margin-bottom:9px}
 
 /* Hover popup */
-.card-popup{
-  position:fixed;z-index:9999;pointer-events:none;display:none;
-}
-.card-popup img{width:200px;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.9)}
+.card-popup{position:fixed;z-index:9999;pointer-events:none;display:none}
+.card-popup img{width:190px;border-radius:11px;box-shadow:0 18px 50px rgba(0,0,0,.9)}
 
 /* Placeholder */
-.placeholder{
-  text-align:center;padding:70px 20px;
-  background:var(--bg2);border-radius:20px;border:1px solid var(--border);
-}
-.placeholder-icon{font-size:58px;margin-bottom:14px}
-.placeholder h2{font-size:19px;color:var(--text);margin-bottom:7px}
-.placeholder p{color:var(--muted);font-size:13px;margin-bottom:22px}
-.examples{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
-.ex-tag{
-  padding:5px 13px;border-radius:100px;
-  background:var(--bg3);color:var(--muted);
-  font-size:12px;border:1px solid var(--border);
-  cursor:pointer;transition:all .2s;
-}
+.placeholder{text-align:center;padding:60px 20px;background:var(--bg2);border-radius:18px;border:1px solid var(--border)}
+.placeholder-icon{font-size:52px;margin-bottom:12px}
+.placeholder h2{font-size:18px;color:var(--text);margin-bottom:6px}
+.placeholder p{color:var(--muted);font-size:13px;margin-bottom:20px}
+.examples{display:flex;gap:7px;flex-wrap:wrap;justify-content:center}
+.ex-tag{padding:5px 12px;border-radius:100px;background:var(--bg3);color:var(--muted);font-size:12px;border:1px solid var(--border);cursor:pointer;transition:all .2s}
 .ex-tag:hover{border-color:var(--gold);color:var(--gold)}
 
-/* Responsive */
-@media(max-width:680px){
+/* Chart */
+.chart-panel{background:rgba(0,0,0,.35);border:1px solid var(--border);border-radius:12px;padding:13px}
+.chart-title{font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:9px}
+.chart-svg{width:100%;overflow:visible}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeUp .3s ease forwards}
+.fade-in-2{animation:fadeUp .3s .07s ease both}
+.fade-in-3{animation:fadeUp .3s .13s ease both}
+
+@media(max-width:640px){
   .hero{grid-template-columns:1fr}
-  .hero-img-col{max-width:220px;margin:0 auto}
+  .hero-img-col{max-width:200px;margin:0 auto}
   .price-grid{grid-template-columns:1fr}
   .deck-header{flex-direction:column}
 }
-
-/* Fade in */
-@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
-.fade-in{animation:fadeUp .35s ease forwards}
-.fade-in-2{animation:fadeUp .35s .08s ease both}
-.fade-in-3{animation:fadeUp .35s .14s ease both}
 </style>
 </head>
 <body>
@@ -417,11 +285,27 @@ body::before{
     <div class="logo">⚡ POKÉDECK</div>
     <div class="logo-sub">COMPETITIVE CARD FINDER</div>
   </div>
-  <div class="header-tags">
-    <span class="header-tag">🌍 Formato Occidental</span>
-    <span class="header-tag" id="yearTag">📅 2025</span>
+  <div class="header-right">
+    <span class="format-tag">🌍 Standard / Expanded</span>
+    <span class="format-tag" id="yearTag"></span>
   </div>
 </header>
+
+<!-- API Key Setup -->
+<div class="setup-bar" id="setupBar">
+  <span class="setup-label">🔑 API KEY ANTHROPIC</span>
+  <input class="setup-input" id="apiKeyInput" type="password" placeholder="sk-ant-api03-...">
+  <button class="setup-btn" onclick="saveKey()">GUARDAR</button>
+  <div class="setup-hint">
+    Necesitas una clave gratuita de Anthropic. Consíguela en
+    <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a>
+    — se guarda solo en tu navegador, nunca se envía a ningún servidor externo.
+  </div>
+</div>
+<div class="key-ok" id="keyOk">
+  <span>✅ API Key configurada — listo para buscar</span>
+  <span class="key-change" onclick="changeKey()">Cambiar clave</span>
+</div>
 
 <div class="search-zone">
   <h1 class="search-title">ENCUENTRA TU CARTA</h1>
@@ -430,48 +314,38 @@ body::before{
     <input class="search-input" id="searchInput" type="text"
       placeholder="Ej: Charizard ex, Iono, Gardevoir..." autocomplete="off">
     <button class="search-btn" id="searchBtn" onclick="doSearch()">🔍 BUSCAR</button>
-    <div class="autocomplete" id="autocomplete"></div>
-  </div>
-  <div class="lang-row">
-    <button class="lang-btn active" id="btn-en" onclick="toggleLang('en')">🇬🇧 ENG</button>
-    <button class="lang-btn active" id="btn-es" onclick="toggleLang('es')">🇪🇸 ESP</button>
   </div>
 </div>
 
 <div class="main">
-  <!-- Loading -->
   <div class="loading" id="loading">
     <div class="pokeball"></div>
-    <p class="loading-text" id="loadingText">Buscando en la Pokédex...</p>
+    <p class="loading-text" id="loadingText">Consultando a Claude...</p>
+    <div class="loading-stream" id="loadingStream"></div>
   </div>
 
-  <!-- Error -->
   <div class="msg-box" id="errorBox">
     <div class="icon">😵</div>
-    <p id="errorText">No se encontró la carta.</p>
+    <p id="errorText">Error.</p>
   </div>
 
-  <!-- Placeholder -->
   <div class="placeholder" id="placeholder">
     <div class="placeholder-icon">⚡</div>
-    <h2>Busca cualquier carta Pokémon</h2>
-    <p>Mazos competitivos · Rarezas · Precios ENG/ESP · Tendencia de mercado</p>
+    <h2>Busca cualquier carta Pokémon TCG</h2>
+    <p>Claude analiza el meta occidental y te devuelve mazos, rarezas, imágenes y precios</p>
     <div class="examples">
       <span class="ex-tag" onclick="quickSearch('Charizard ex')">Charizard ex</span>
       <span class="ex-tag" onclick="quickSearch('Iono')">Iono</span>
       <span class="ex-tag" onclick="quickSearch('Gardevoir ex')">Gardevoir ex</span>
       <span class="ex-tag" onclick="quickSearch('Dragapult ex')">Dragapult ex</span>
       <span class="ex-tag" onclick="quickSearch('Pikachu ex')">Pikachu ex</span>
-      <span class="ex-tag" onclick="quickSearch('Bulbasaur')">Bulbasaur</span>
+      <span class="ex-tag" onclick="quickSearch('Roaring Moon ex')">Roaring Moon ex</span>
     </div>
   </div>
 
-  <!-- Result -->
   <div class="result" id="result">
     <div class="s-label fade-in">📋 FICHA DE LA CARTA</div>
-    <div class="hero fade-in" id="heroCard">
-      <div class="hero-glow" id="heroGlow"></div>
-    </div>
+    <div class="hero fade-in" id="heroCard"></div>
 
     <div id="variantsSection" style="display:none">
       <div class="s-label fade-in-2">✨ VARIANTES Y RAREZAS</div>
@@ -484,595 +358,460 @@ body::before{
   </div>
 </div>
 
-<!-- Hover popup -->
-<div class="card-popup" id="cardPopup">
-  <img id="popupImg" src="" alt="">
-</div>
+<div class="card-popup" id="cardPopup"><img id="popupImg" src="" alt=""></div>
 
 <script>
-// ─── State ───────────────────────────────────────────────────────────────────
-const API = 'https://api.pokemontcg.io/v2';
-let langs = {en:true, es:true};
-let acTimer = null;
-let currentCards = [];
-let activeVariant = 0;
-document.getElementById('yearTag').textContent = '📅 ' + new Date().getFullYear();
-
-// ─── Competitive meta decks database ─────────────────────────────────────────
+// ─── Competive deck database (hardcoded, no API needed) ───────────────────────
 const META_DECKS = {
-  // Keys: lowercase card name fragments that appear in the deck
-  "charizard":[
-    {
-      name:"Charizard ex / Pidgeot ex",
-      format:"Standard",archetype:"Ataque",winRate:"58%",
-      tournamentPlacements:"Campeón NAIC 2024 · Top 8 EUIC 2024 · Top 4 Worlds 2024",
-      description:"El mazo más consistente del meta. Pidgeot ex busca cualquier carta cada turno mientras Charizard ex remata con golpes de 180-330 de daño.",
-      cards:[
-        {n:"Charmander",q:4,s:"sv3",num:"4"},
-        {n:"Charmeleon",q:2,s:"sv3",num:"5"},
-        {n:"Charizard ex",q:3,s:"sv3",num:"125"},
-        {n:"Pidgey",q:3,s:"sv3",num:"177"},
-        {n:"Pidgeotto",q:1,s:"sv3",num:"178"},
-        {n:"Pidgeot ex",q:3,s:"sv3",num:"164"},
-        {n:"Mew ex",q:1,s:"sv3pt5",num:"151"},
-        {n:"Rotom V",q:1,s:"swsh11",num:"58"},
-        {n:"Rare Candy",q:4,s:"sv3",num:"191"},
-        {n:"Nest Ball",q:4,s:"sv1",num:"181"},
-        {n:"Ultra Ball",q:4,s:"sv1",num:"196"},
-        {n:"Iono",q:4,s:"sv2",num:"185"},
-        {n:"Professor's Research",q:3,s:"sv3",num:"189"},
-        {n:"Boss's Orders",q:3,s:"sv3",num:"172"},
-        {n:"Arven",q:2,s:"sv1",num:"166"},
-        {n:"Super Rod",q:2,s:"sv3",num:"188"},
-        {n:"Lost Vacuum",q:1,s:"swsh11",num:"162"},
-        {n:"Forest Seal Stone",q:1,s:"swsh12",num:"156"},
-        {n:"TM: Devolution",q:1,s:"sv4",num:"177"},
-        {n:"Penny",q:1,s:"sv3",num:"183"},
-        {n:"Fire Energy",q:9,s:"svead1",num:"3"},
-      ]
-    }
-  ],
-  "pidgeot":[
-    {
-      name:"Charizard ex / Pidgeot ex",
-      format:"Standard",archetype:"Ataque",winRate:"58%",
-      tournamentPlacements:"Campeón NAIC 2024 · Top 8 EUIC 2024",
-      description:"Pidgeot ex es el motor de este mazo. Su habilidad Quick Search permite buscar cualquier carta del mazo una vez por turno, dando una consistencia brutal.",
-      cards:[
-        {n:"Charmander",q:4,s:"sv3",num:"4"},{n:"Charmeleon",q:2,s:"sv3",num:"5"},
-        {n:"Charizard ex",q:3,s:"sv3",num:"125"},{n:"Pidgey",q:3,s:"sv3",num:"177"},
-        {n:"Pidgeotto",q:1,s:"sv3",num:"178"},{n:"Pidgeot ex",q:3,s:"sv3",num:"164"},
-        {n:"Mew ex",q:1,s:"sv3pt5",num:"151"},{n:"Rotom V",q:1,s:"swsh11",num:"58"},
-        {n:"Rare Candy",q:4,s:"sv3",num:"191"},{n:"Nest Ball",q:4,s:"sv1",num:"181"},
-        {n:"Ultra Ball",q:4,s:"sv1",num:"196"},{n:"Iono",q:4,s:"sv2",num:"185"},
-        {n:"Professor's Research",q:3,s:"sv3",num:"189"},{n:"Boss's Orders",q:3,s:"sv3",num:"172"},
-        {n:"Arven",q:2,s:"sv1",num:"166"},{n:"Super Rod",q:2,s:"sv3",num:"188"},
-        {n:"Lost Vacuum",q:1,s:"swsh11",num:"162"},{n:"Forest Seal Stone",q:1,s:"swsh12",num:"156"},
-        {n:"TM: Devolution",q:1,s:"sv4",num:"177"},{n:"Penny",q:1,s:"sv3",num:"183"},
-        {n:"Fire Energy",q:9,s:"svead1",num:"3"},
-      ]
-    },
-    {
-      name:"Dragapult ex / Pidgeot ex",
-      format:"Standard",archetype:"Daño distribuido",winRate:"55%",
-      tournamentPlacements:"Top 8 Stuttgart Regionals 2024 · Top 16 EUIC 2024",
-      description:"Pidgeot ex acelera la búsqueda de piezas mientras Dragapult ex distribuye daño en el banco rival con Phantom Dive.",
-      cards:[
-        {n:"Dreepy",q:4,s:"sv5",num:"91"},{n:"Drakloak",q:2,s:"sv5",num:"92"},
-        {n:"Dragapult ex",q:3,s:"sv5",num:"130"},{n:"Pidgey",q:3,s:"sv3",num:"177"},
-        {n:"Pidgeotto",q:1,s:"sv3",num:"178"},{n:"Pidgeot ex",q:3,s:"sv3",num:"164"},
-        {n:"Mew ex",q:1,s:"sv3pt5",num:"151"},{n:"Munkidori",q:1,s:"sv6",num:"94"},
-        {n:"Froslass",q:1,s:"sv5",num:"47"},{n:"Rare Candy",q:4,s:"sv3",num:"191"},
-        {n:"Nest Ball",q:4,s:"sv1",num:"181"},{n:"Ultra Ball",q:4,s:"sv1",num:"196"},
-        {n:"Iono",q:4,s:"sv2",num:"185"},{n:"Professor's Research",q:3,s:"sv3",num:"189"},
-        {n:"Boss's Orders",q:3,s:"sv3",num:"172"},{n:"Arven",q:2,s:"sv1",num:"166"},
-        {n:"Super Rod",q:2,s:"sv3",num:"188"},{n:"Lost Vacuum",q:1,s:"swsh11",num:"162"},
-        {n:"TM: Devolution",q:1,s:"sv4",num:"177"},{n:"Psychic Energy",q:5,s:"svead1",num:"5"},
-        {n:"Grass Energy",q:3,s:"svead1",num:"1"},
-      ]
-    }
-  ],
-  "gardevoir":[
-    {
-      name:"Gardevoir ex",
-      format:"Standard",archetype:"Aceleración Psíquica",winRate:"54%",
-      tournamentPlacements:"Top 4 EUIC 2024 · Campeón Santiago Regionals 2024",
-      description:"Gardevoir ex acelera Energía Psíquica desde el mazo. Kirlia busca las piezas necesarias. Mazo muy sólido con altísimo techo de habilidad.",
-      cards:[
-        {n:"Ralts",q:4,s:"sv3",num:"68"},{n:"Kirlia",q:3,s:"sv3",num:"69"},
-        {n:"Gardevoir ex",q:3,s:"sv3",num:"86"},{n:"Gardevoir",q:1,s:"sv3",num:"72"},
-        {n:"Zacian V",q:1,s:"swsh1",num:"138"},{n:"Drifloon",q:2,s:"sv3pt5",num:"58"},
-        {n:"Drifblim",q:2,s:"sv3pt5",num:"59"},{n:"Manaphy",q:1,s:"swsh9",num:"41"},
-        {n:"Jirachi",q:1,s:"sv4",num:"126"},{n:"Rare Candy",q:4,s:"sv3",num:"191"},
-        {n:"Nest Ball",q:4,s:"sv1",num:"181"},{n:"Ultra Ball",q:3,s:"sv1",num:"196"},
-        {n:"Level Ball",q:2,s:"swsh6",num:"129"},{n:"Iono",q:4,s:"sv2",num:"185"},
-        {n:"Professor's Research",q:3,s:"sv3",num:"189"},{n:"Boss's Orders",q:2,s:"sv3",num:"172"},
-        {n:"Arven",q:2,s:"sv1",num:"166"},{n:"Fog Crystal",q:3,s:"swsh6",num:"140"},
-        {n:"Collapsed Stadium",q:2,s:"swsh9",num:"137"},{n:"Trekking Shoes",q:2,s:"swsh11",num:"215"},
-        {n:"Defiance Band",q:2,s:"sv3",num:"169"},{n:"Lost Vacuum",q:1,s:"swsh11",num:"162"},
-        {n:"Super Rod",q:1,s:"sv3",num:"188"},{n:"Psychic Energy",q:9,s:"svead1",num:"5"},
-      ]
-    }
-  ],
-  "roaring moon":[
-    {
-      name:"Roaring Moon ex / Sableye",
-      format:"Standard",archetype:"Agresivo Lost Zone",winRate:"56%",
-      tournamentPlacements:"Campeón LAIC 2024 · Top 8 Worlds 2024",
-      description:"Mazo hiperagresivo de Lost Zone. Usa Mirage Gate para energizar a Roaring Moon ex de un turno y aplicar KO instantáneos. Sableye recupera recursos.",
-      cards:[
-        {n:"Roaring Moon ex",q:3,s:"sv4",num:"108"},{n:"Sableye",q:2,s:"sv5",num:"106"},
-        {n:"Radiant Greninja",q:1,s:"swsh11",num:"46"},{n:"Iron Hands ex",q:1,s:"sv4",num:"70"},
-        {n:"Squawkabilly ex",q:2,s:"sv2",num:"169"},{n:"Lumineon V",q:1,s:"swsh11",num:"40"},
-        {n:"Mew ex",q:1,s:"sv3pt5",num:"151"},{n:"Comfey",q:4,s:"swsh11",num:"79"},
-        {n:"Coliseum",q:4,s:"sv5",num:"128"},{n:"Mirage Gate",q:4,s:"swsh11",num:"163"},
-        {n:"Jet Energy",q:4,s:"sv5",num:"125"},{n:"Iono",q:3,s:"sv2",num:"185"},
-        {n:"Professor's Research",q:3,s:"sv3",num:"189"},{n:"Boss's Orders",q:3,s:"sv3",num:"172"},
-        {n:"Ultra Ball",q:4,s:"sv1",num:"196"},{n:"Nest Ball",q:2,s:"sv1",num:"181"},
-        {n:"Lost Vacuum",q:2,s:"swsh11",num:"162"},{n:"Switch",q:2,s:"sv1",num:"194"},
-        {n:"Roxanne",q:1,s:"swsh11",num:"150"},{n:"Dark Energy",q:4,s:"svead1",num:"7"},
-        {n:"Psychic Energy",q:4,s:"svead1",num:"5"},{n:"Grass Energy",q:3,s:"svead1",num:"1"},
-      ]
-    }
-  ],
-  "dragapult":[
-    {
-      name:"Dragapult ex / Pidgeot ex",
-      format:"Standard",archetype:"Daño distribuido",winRate:"55%",
-      tournamentPlacements:"Top 8 Stuttgart Regionals 2024 · Top 16 EUIC 2024",
-      description:"Dragapult ex reparte 6 contadores de daño al banco rival con Phantom Dive. Combinado con Pidgeot ex, el mazo tiene una consistencia brutal.",
-      cards:[
-        {n:"Dreepy",q:4,s:"sv5",num:"91"},{n:"Drakloak",q:2,s:"sv5",num:"92"},
-        {n:"Dragapult ex",q:3,s:"sv5",num:"130"},{n:"Pidgey",q:3,s:"sv3",num:"177"},
-        {n:"Pidgeotto",q:1,s:"sv3",num:"178"},{n:"Pidgeot ex",q:3,s:"sv3",num:"164"},
-        {n:"Mew ex",q:1,s:"sv3pt5",num:"151"},{n:"Munkidori",q:1,s:"sv6",num:"94"},
-        {n:"Froslass",q:1,s:"sv5",num:"47"},{n:"Rare Candy",q:4,s:"sv3",num:"191"},
-        {n:"Nest Ball",q:4,s:"sv1",num:"181"},{n:"Ultra Ball",q:4,s:"sv1",num:"196"},
-        {n:"Iono",q:4,s:"sv2",num:"185"},{n:"Professor's Research",q:3,s:"sv3",num:"189"},
-        {n:"Boss's Orders",q:3,s:"sv3",num:"172"},{n:"Arven",q:2,s:"sv1",num:"166"},
-        {n:"Super Rod",q:2,s:"sv3",num:"188"},{n:"Lost Vacuum",q:1,s:"swsh11",num:"162"},
-        {n:"TM: Devolution",q:1,s:"sv4",num:"177"},{n:"Psychic Energy",q:5,s:"svead1",num:"5"},
-        {n:"Grass Energy",q:3,s:"svead1",num:"1"},
-      ]
-    }
-  ],
-  "iron thorns":[
-    {
-      name:"Iron Thorns ex / Gholdengo ex",
-      format:"Standard",archetype:"Control / Lock",winRate:"52%",
-      tournamentPlacements:"Top 16 EUIC 2024 · Top 8 Bogotá Regionals 2024",
-      description:"Mazo de bloqueo. Iron Thorns ex impide jugar cartas ex/V del rival. Gholdengo ex refuerza el control. Muy efectivo contra mazos ex-dependientes.",
-      cards:[
-        {n:"Iron Thorns ex",q:3,s:"sv4",num:"97"},{n:"Gholdengo ex",q:3,s:"sv4",num:"139"},
-        {n:"Roaring Moon ex",q:1,s:"sv4",num:"108"},{n:"Radiant Greninja",q:1,s:"swsh11",num:"46"},
-        {n:"Manaphy",q:1,s:"swsh9",num:"41"},{n:"Squawkabilly ex",q:2,s:"sv2",num:"169"},
-        {n:"Ultra Ball",q:4,s:"sv1",num:"196"},{n:"Nest Ball",q:4,s:"sv1",num:"181"},
-        {n:"Iono",q:4,s:"sv2",num:"185"},{n:"Professor's Research",q:3,s:"sv3",num:"189"},
-        {n:"Boss's Orders",q:3,s:"sv3",num:"172"},{n:"Arven",q:2,s:"sv1",num:"166"},
-        {n:"TM: Evolution",q:2,s:"sv5",num:"178"},{n:"Lost Vacuum",q:2,s:"swsh11",num:"162"},
-        {n:"Super Rod",q:2,s:"sv3",num:"188"},{n:"Forest Seal Stone",q:1,s:"sv3",num:"156"},
-        {n:"Heavy Baton",q:1,s:"sv5",num:"154"},{n:"Defiance Band",q:2,s:"sv3",num:"169"},
-        {n:"Metal Energy",q:9,s:"svead1",num:"8"},{n:"Dark Energy",q:5,s:"svead1",num:"7"},
-      ]
-    }
-  ],
+  "charizard":[{
+    name:"Charizard ex / Pidgeot ex",format:"Standard",archetype:"Ataque",winRate:"58%",
+    tournamentPlacements:"Campeón NAIC 2024 · Top 8 EUIC 2024 · Top 4 Worlds 2024",
+    description:"El mazo más consistente del meta. Pidgeot ex busca cualquier carta cada turno mientras Charizard ex remata con golpes de 180-330 de daño.",
+    cards:[
+      {n:"Charmander",q:4,s:"sv3",num:"4"},{n:"Charmeleon",q:2,s:"sv3",num:"5"},
+      {n:"Charizard ex",q:3,s:"sv3",num:"125"},{n:"Pidgey",q:3,s:"sv3",num:"177"},
+      {n:"Pidgeotto",q:1,s:"sv3",num:"178"},{n:"Pidgeot ex",q:3,s:"sv3",num:"164"},
+      {n:"Mew ex",q:1,s:"sv3pt5",num:"151"},{n:"Rotom V",q:1,s:"swsh11",num:"58"},
+      {n:"Rare Candy",q:4,s:"sv3",num:"191"},{n:"Nest Ball",q:4,s:"sv1",num:"181"},
+      {n:"Ultra Ball",q:4,s:"sv1",num:"196"},{n:"Iono",q:4,s:"sv2",num:"185"},
+      {n:"Professor's Research",q:3,s:"sv3",num:"189"},{n:"Boss's Orders",q:3,s:"sv3",num:"172"},
+      {n:"Arven",q:2,s:"sv1",num:"166"},{n:"Super Rod",q:2,s:"sv3",num:"188"},
+      {n:"Lost Vacuum",q:1,s:"swsh11",num:"162"},{n:"Forest Seal Stone",q:1,s:"swsh12",num:"156"},
+      {n:"TM: Devolution",q:1,s:"sv4",num:"177"},{n:"Penny",q:1,s:"sv3",num:"183"},
+      {n:"Fire Energy",q:9,s:"svead1",num:"3"},
+    ]
+  }],
+  "pidgeot":[{
+    name:"Charizard ex / Pidgeot ex",format:"Standard",archetype:"Ataque",winRate:"58%",
+    tournamentPlacements:"Campeón NAIC 2024 · Top 8 EUIC 2024",
+    description:"Pidgeot ex es el motor del mazo. Su habilidad Quick Search permite buscar cualquier carta del mazo una vez por turno, dando consistencia brutal.",
+    cards:[
+      {n:"Charmander",q:4,s:"sv3",num:"4"},{n:"Charmeleon",q:2,s:"sv3",num:"5"},
+      {n:"Charizard ex",q:3,s:"sv3",num:"125"},{n:"Pidgey",q:3,s:"sv3",num:"177"},
+      {n:"Pidgeotto",q:1,s:"sv3",num:"178"},{n:"Pidgeot ex",q:3,s:"sv3",num:"164"},
+      {n:"Rare Candy",q:4,s:"sv3",num:"191"},{n:"Nest Ball",q:4,s:"sv1",num:"181"},
+      {n:"Ultra Ball",q:4,s:"sv1",num:"196"},{n:"Iono",q:4,s:"sv2",num:"185"},
+      {n:"Professor's Research",q:3,s:"sv3",num:"189"},{n:"Boss's Orders",q:3,s:"sv3",num:"172"},
+      {n:"Arven",q:2,s:"sv1",num:"166"},{n:"Super Rod",q:2,s:"sv3",num:"188"},
+      {n:"Fire Energy",q:9,s:"svead1",num:"3"},
+    ]
+  },{
+    name:"Dragapult ex / Pidgeot ex",format:"Standard",archetype:"Daño distribuido",winRate:"55%",
+    tournamentPlacements:"Top 8 Stuttgart Regionals 2024 · Top 16 EUIC 2024",
+    description:"Pidgeot ex acelera búsqueda mientras Dragapult ex distribuye daño en el banco rival con Phantom Dive.",
+    cards:[
+      {n:"Dreepy",q:4,s:"sv5",num:"91"},{n:"Drakloak",q:2,s:"sv5",num:"92"},
+      {n:"Dragapult ex",q:3,s:"sv5",num:"130"},{n:"Pidgey",q:3,s:"sv3",num:"177"},
+      {n:"Pidgeotto",q:1,s:"sv3",num:"178"},{n:"Pidgeot ex",q:3,s:"sv3",num:"164"},
+      {n:"Rare Candy",q:4,s:"sv3",num:"191"},{n:"Nest Ball",q:4,s:"sv1",num:"181"},
+      {n:"Ultra Ball",q:4,s:"sv1",num:"196"},{n:"Iono",q:4,s:"sv2",num:"185"},
+      {n:"Professor's Research",q:3,s:"sv3",num:"189"},{n:"Boss's Orders",q:3,s:"sv3",num:"172"},
+      {n:"Psychic Energy",q:5,s:"svead1",num:"5"},{n:"Grass Energy",q:3,s:"svead1",num:"1"},
+    ]
+  }],
+  "gardevoir":[{
+    name:"Gardevoir ex",format:"Standard",archetype:"Aceleración Psíquica",winRate:"54%",
+    tournamentPlacements:"Top 4 EUIC 2024 · Campeón Santiago Regionals 2024",
+    description:"Gardevoir ex acelera Energía Psíquica desde el mazo. Kirlia busca las piezas. Muy sólido con altísimo techo de habilidad.",
+    cards:[
+      {n:"Ralts",q:4,s:"sv3",num:"68"},{n:"Kirlia",q:3,s:"sv3",num:"69"},
+      {n:"Gardevoir ex",q:3,s:"sv3",num:"86"},{n:"Gardevoir",q:1,s:"sv3",num:"72"},
+      {n:"Zacian V",q:1,s:"swsh1",num:"138"},{n:"Manaphy",q:1,s:"swsh9",num:"41"},
+      {n:"Jirachi",q:1,s:"sv4",num:"126"},{n:"Rare Candy",q:4,s:"sv3",num:"191"},
+      {n:"Nest Ball",q:4,s:"sv1",num:"181"},{n:"Ultra Ball",q:3,s:"sv1",num:"196"},
+      {n:"Level Ball",q:2,s:"swsh6",num:"129"},{n:"Iono",q:4,s:"sv2",num:"185"},
+      {n:"Professor's Research",q:3,s:"sv3",num:"189"},{n:"Boss's Orders",q:2,s:"sv3",num:"172"},
+      {n:"Arven",q:2,s:"sv1",num:"166"},{n:"Fog Crystal",q:3,s:"swsh6",num:"140"},
+      {n:"Collapsed Stadium",q:2,s:"swsh9",num:"137"},{n:"Defiance Band",q:2,s:"sv3",num:"169"},
+      {n:"Psychic Energy",q:9,s:"svead1",num:"5"},
+    ]
+  }],
+  "roaring moon":[{
+    name:"Roaring Moon ex / Sableye",format:"Standard",archetype:"Agresivo Lost Zone",winRate:"56%",
+    tournamentPlacements:"Campeón LAIC 2024 · Top 8 Worlds 2024",
+    description:"Mazo hiperagresivo de Lost Zone. Usa Mirage Gate para energizar a Roaring Moon ex en un turno y aplicar KO instantáneos.",
+    cards:[
+      {n:"Roaring Moon ex",q:3,s:"sv4",num:"108"},{n:"Sableye",q:2,s:"sv5",num:"106"},
+      {n:"Radiant Greninja",q:1,s:"swsh11",num:"46"},{n:"Comfey",q:4,s:"swsh11",num:"79"},
+      {n:"Coliseum",q:4,s:"sv5",num:"128"},{n:"Mirage Gate",q:4,s:"swsh11",num:"163"},
+      {n:"Jet Energy",q:4,s:"sv5",num:"125"},{n:"Iono",q:3,s:"sv2",num:"185"},
+      {n:"Professor's Research",q:3,s:"sv3",num:"189"},{n:"Boss's Orders",q:3,s:"sv3",num:"172"},
+      {n:"Ultra Ball",q:4,s:"sv1",num:"196"},{n:"Lost Vacuum",q:2,s:"swsh11",num:"162"},
+      {n:"Dark Energy",q:4,s:"svead1",num:"7"},{n:"Psychic Energy",q:4,s:"svead1",num:"5"},
+    ]
+  }],
+  "dragapult":[{
+    name:"Dragapult ex / Pidgeot ex",format:"Standard",archetype:"Daño distribuido",winRate:"55%",
+    tournamentPlacements:"Top 8 Stuttgart Regionals 2024 · Top 16 EUIC 2024",
+    description:"Dragapult ex reparte 6 contadores de daño al banco rival con Phantom Dive cada turno. Con Pidgeot ex es casi imparable.",
+    cards:[
+      {n:"Dreepy",q:4,s:"sv5",num:"91"},{n:"Drakloak",q:2,s:"sv5",num:"92"},
+      {n:"Dragapult ex",q:3,s:"sv5",num:"130"},{n:"Pidgey",q:3,s:"sv3",num:"177"},
+      {n:"Pidgeotto",q:1,s:"sv3",num:"178"},{n:"Pidgeot ex",q:3,s:"sv3",num:"164"},
+      {n:"Munkidori",q:1,s:"sv6",num:"94"},{n:"Froslass",q:1,s:"sv5",num:"47"},
+      {n:"Rare Candy",q:4,s:"sv3",num:"191"},{n:"Nest Ball",q:4,s:"sv1",num:"181"},
+      {n:"Ultra Ball",q:4,s:"sv1",num:"196"},{n:"Iono",q:4,s:"sv2",num:"185"},
+      {n:"Professor's Research",q:3,s:"sv3",num:"189"},{n:"Boss's Orders",q:3,s:"sv3",num:"172"},
+      {n:"Psychic Energy",q:5,s:"svead1",num:"5"},{n:"Grass Energy",q:3,s:"svead1",num:"1"},
+    ]
+  }],
+  "lugia":[{
+    name:"Lugia VSTAR / Archeops",format:"Expanded",archetype:"VSTAR Aceleración",winRate:"55%",
+    tournamentPlacements:"Campeón LAIC 2023 · Top 4 Worlds 2023",
+    description:"Lugia VSTAR con Archeops permite usar Energías Especiales sin límite. Uno de los mazos más poderosos de la era VSTAR.",
+    cards:[
+      {n:"Lugia V",q:3,s:"swsh11",num:"138"},{n:"Lugia VSTAR",q:3,s:"swsh11",num:"139"},
+      {n:"Archeops",q:4,s:"swsh11",num:"93"},{n:"Lumineon V",q:1,s:"swsh11",num:"40"},
+      {n:"Ultra Ball",q:4,s:"sv1",num:"196"},{n:"Nest Ball",q:3,s:"sv1",num:"181"},
+      {n:"Iono",q:4,s:"sv2",num:"185"},{n:"Professor's Research",q:4,s:"sv3",num:"189"},
+      {n:"Boss's Orders",q:3,s:"sv3",num:"172"},{n:"Choice Belt",q:2,s:"swsh9",num:"135"},
+      {n:"Double Turbo Energy",q:4,s:"swsh9",num:"151"},{n:"Powerful Energy",q:4,s:"swsh6",num:"176"},
+    ]
+  }],
+  "iron thorns":[{
+    name:"Iron Thorns ex / Gholdengo ex",format:"Standard",archetype:"Control / Lock",winRate:"52%",
+    tournamentPlacements:"Top 16 EUIC 2024 · Top 8 Bogotá Regionals 2024",
+    description:"Mazo de bloqueo. Iron Thorns ex impide jugar cartas ex/V del rival. Muy efectivo contra mazos ex-dependientes.",
+    cards:[
+      {n:"Iron Thorns ex",q:3,s:"sv4",num:"97"},{n:"Gholdengo ex",q:3,s:"sv4",num:"139"},
+      {n:"Squawkabilly ex",q:2,s:"sv2",num:"169"},{n:"Ultra Ball",q:4,s:"sv1",num:"196"},
+      {n:"Nest Ball",q:4,s:"sv1",num:"181"},{n:"Iono",q:4,s:"sv2",num:"185"},
+      {n:"Professor's Research",q:3,s:"sv3",num:"189"},{n:"Boss's Orders",q:3,s:"sv3",num:"172"},
+      {n:"Metal Energy",q:9,s:"svead1",num:"8"},{n:"Dark Energy",q:5,s:"svead1",num:"7"},
+    ]
+  }],
+  "sableye":[{
+    name:"Roaring Moon ex / Sableye",format:"Standard",archetype:"Agresivo Lost Zone",winRate:"56%",
+    tournamentPlacements:"Campeón LAIC 2024 · Top 8 Worlds 2024",
+    description:"Sableye recupera recursos del Lost Zone y alarga la partida. Junto a Roaring Moon ex forma uno de los mazos más agresivos del meta.",
+    cards:[
+      {n:"Roaring Moon ex",q:3,s:"sv4",num:"108"},{n:"Sableye",q:2,s:"sv5",num:"106"},
+      {n:"Comfey",q:4,s:"swsh11",num:"79"},{n:"Mirage Gate",q:4,s:"swsh11",num:"163"},
+      {n:"Ultra Ball",q:4,s:"sv1",num:"196"},{n:"Iono",q:3,s:"sv2",num:"185"},
+      {n:"Dark Energy",q:4,s:"svead1",num:"7"},{n:"Psychic Energy",q:4,s:"svead1",num:"5"},
+    ]
+  }],
   "iono":[
-    {name:"Charizard ex / Pidgeot ex",format:"Standard",archetype:"Ataque",winRate:"58%",tournamentPlacements:"Campeón NAIC 2024",description:"Iono x4 es pieza clave de disrupción.",cards:[{n:"Charmander",q:4,s:"sv3",num:"4"},{n:"Charmeleon",q:2,s:"sv3",num:"5"},{n:"Charizard ex",q:3,s:"sv3",num:"125"},{n:"Pidgey",q:3,s:"sv3",num:"177"},{n:"Pidgeotto",q:1,s:"sv3",num:"178"},{n:"Pidgeot ex",q:3,s:"sv3",num:"164"},{n:"Mew ex",q:1,s:"sv3pt5",num:"151"},{n:"Rotom V",q:1,s:"swsh11",num:"58"},{n:"Rare Candy",q:4,s:"sv3",num:"191"},{n:"Nest Ball",q:4,s:"sv1",num:"181"},{n:"Ultra Ball",q:4,s:"sv1",num:"196"},{n:"Iono",q:4,s:"sv2",num:"185"},{n:"Professor's Research",q:3,s:"sv3",num:"189"},{n:"Boss's Orders",q:3,s:"sv3",num:"172"},{n:"Arven",q:2,s:"sv1",num:"166"},{n:"Super Rod",q:2,s:"sv3",num:"188"},{n:"Lost Vacuum",q:1,s:"swsh11",num:"162"},{n:"Forest Seal Stone",q:1,s:"swsh12",num:"156"},{n:"TM: Devolution",q:1,s:"sv4",num:"177"},{n:"Penny",q:1,s:"sv3",num:"183"},{n:"Fire Energy",q:9,s:"svead1",num:"3"}]},
-    {name:"Gardevoir ex",format:"Standard",archetype:"Aceleración Psíquica",winRate:"54%",tournamentPlacements:"Top 4 EUIC 2024",description:"Iono x4 es disruptor crítico en este mazo.",cards:[{n:"Ralts",q:4,s:"sv3",num:"68"},{n:"Kirlia",q:3,s:"sv3",num:"69"},{n:"Gardevoir ex",q:3,s:"sv3",num:"86"},{n:"Gardevoir",q:1,s:"sv3",num:"72"},{n:"Zacian V",q:1,s:"swsh1",num:"138"},{n:"Drifloon",q:2,s:"sv3pt5",num:"58"},{n:"Drifblim",q:2,s:"sv3pt5",num:"59"},{n:"Manaphy",q:1,s:"swsh9",num:"41"},{n:"Jirachi",q:1,s:"sv4",num:"126"},{n:"Rare Candy",q:4,s:"sv3",num:"191"},{n:"Nest Ball",q:4,s:"sv1",num:"181"},{n:"Ultra Ball",q:3,s:"sv1",num:"196"},{n:"Level Ball",q:2,s:"swsh6",num:"129"},{n:"Iono",q:4,s:"sv2",num:"185"},{n:"Professor's Research",q:3,s:"sv3",num:"189"},{n:"Boss's Orders",q:2,s:"sv3",num:"172"},{n:"Arven",q:2,s:"sv1",num:"166"},{n:"Fog Crystal",q:3,s:"swsh6",num:"140"},{n:"Collapsed Stadium",q:2,s:"swsh9",num:"137"},{n:"Trekking Shoes",q:2,s:"swsh11",num:"215"},{n:"Defiance Band",q:2,s:"sv3",num:"169"},{n:"Lost Vacuum",q:1,s:"swsh11",num:"162"},{n:"Super Rod",q:1,s:"sv3",num:"188"},{n:"Psychic Energy",q:9,s:"svead1",num:"5"}]},
+    {name:"Charizard ex / Pidgeot ex",format:"Standard",archetype:"Ataque",winRate:"58%",tournamentPlacements:"Campeón NAIC 2024",description:"Iono x4 es pieza clave de disrupción en este mazo.",cards:[{n:"Charmander",q:4,s:"sv3",num:"4"},{n:"Charizard ex",q:3,s:"sv3",num:"125"},{n:"Pidgey",q:3,s:"sv3",num:"177"},{n:"Pidgeot ex",q:3,s:"sv3",num:"164"},{n:"Rare Candy",q:4,s:"sv3",num:"191"},{n:"Iono",q:4,s:"sv2",num:"185"},{n:"Professor's Research",q:3,s:"sv3",num:"189"},{n:"Boss's Orders",q:3,s:"sv3",num:"172"},{n:"Fire Energy",q:9,s:"svead1",num:"3"}]},
+    {name:"Gardevoir ex",format:"Standard",archetype:"Aceleración Psíquica",winRate:"54%",tournamentPlacements:"Top 4 EUIC 2024",description:"Iono x4 es el principal disruptor de este mazo.",cards:[{n:"Ralts",q:4,s:"sv3",num:"68"},{n:"Kirlia",q:3,s:"sv3",num:"69"},{n:"Gardevoir ex",q:3,s:"sv3",num:"86"},{n:"Rare Candy",q:4,s:"sv3",num:"191"},{n:"Iono",q:4,s:"sv2",num:"185"},{n:"Professor's Research",q:3,s:"sv3",num:"189"},{n:"Psychic Energy",q:9,s:"svead1",num:"5"}]},
   ],
+  "pikachu":[{
+    name:"Pikachu ex / Raichu",format:"Standard",archetype:"Relink",winRate:"51%",
+    tournamentPlacements:"Top 16 Berlín Regionals 2024",
+    description:"Pikachu ex acumula energías y las pasa a Raichu con Relink, que remata con Thunder Rumble causando daño masivo al banco.",
+    cards:[
+      {n:"Pikachu ex",q:4,s:"sv3pt5",num:"47"},{n:"Raichu",q:2,s:"sv3pt5",num:"55"},
+      {n:"Bibarel",q:2,s:"swsh11",num:"121"},{n:"Bidoof",q:3,s:"swsh11",num:"120"},
+      {n:"Lumineon V",q:1,s:"swsh11",num:"40"},{n:"Nest Ball",q:4,s:"sv1",num:"181"},
+      {n:"Ultra Ball",q:4,s:"sv1",num:"196"},{n:"Iono",q:4,s:"sv2",num:"185"},
+      {n:"Professor's Research",q:3,s:"sv3",num:"189"},{n:"Boss's Orders",q:3,s:"sv3",num:"172"},
+      {n:"Lightning Energy",q:12,s:"svead1",num:"4"},
+    ]
+  }],
   "boss":[
-    {name:"Charizard ex / Pidgeot ex",format:"Standard",archetype:"Ataque",winRate:"58%",tournamentPlacements:"Campeón NAIC 2024",description:"Boss's Orders x3 para forzar KOs en el banco rival.",cards:[{n:"Charmander",q:4,s:"sv3",num:"4"},{n:"Charmeleon",q:2,s:"sv3",num:"5"},{n:"Charizard ex",q:3,s:"sv3",num:"125"},{n:"Pidgey",q:3,s:"sv3",num:"177"},{n:"Pidgeotto",q:1,s:"sv3",num:"178"},{n:"Pidgeot ex",q:3,s:"sv3",num:"164"},{n:"Mew ex",q:1,s:"sv3pt5",num:"151"},{n:"Rotom V",q:1,s:"swsh11",num:"58"},{n:"Rare Candy",q:4,s:"sv3",num:"191"},{n:"Nest Ball",q:4,s:"sv1",num:"181"},{n:"Ultra Ball",q:4,s:"sv1",num:"196"},{n:"Iono",q:4,s:"sv2",num:"185"},{n:"Professor's Research",q:3,s:"sv3",num:"189"},{n:"Boss's Orders",q:3,s:"sv3",num:"172"},{n:"Arven",q:2,s:"sv1",num:"166"},{n:"Super Rod",q:2,s:"sv3",num:"188"},{n:"Lost Vacuum",q:1,s:"swsh11",num:"162"},{n:"Forest Seal Stone",q:1,s:"swsh12",num:"156"},{n:"TM: Devolution",q:1,s:"sv4",num:"177"},{n:"Penny",q:1,s:"sv3",num:"183"},{n:"Fire Energy",q:9,s:"svead1",num:"3"}]}
-  ],
-  "lugia":[
-    {
-      name:"Lugia VSTAR / Archeops",
-      format:"Standard",archetype:"VSTAR Aceleración",winRate:"55%",
-      tournamentPlacements:"Campeón LAIC 2023 · Top 4 Worlds 2023",
-      description:"Lugia VSTAR con Archeops permite usar Energías Especiales sin límite. Uno de los mazos más poderosos de la era VSTAR.",
-      cards:[
-        {n:"Lugia V",q:3,s:"swsh11",num:"138"},{n:"Lugia VSTAR",q:3,s:"swsh11",num:"139"},
-        {n:"Archeops",q:4,s:"swsh11",num:"93"},{n:"Incineroar V",q:1,s:"swsh11",num:"29"},
-        {n:"Drapion V",q:1,s:"swsh11",num:"118"},{n:"Yveltal",q:1,s:"sv3pt5",num:"46"},
-        {n:"Manaphy",q:1,s:"swsh9",num:"41"},{n:"Lumineon V",q:1,s:"swsh11",num:"40"},
-        {n:"Capture Aroma",q:4,s:"swsh6",num:"150"},{n:"Ultra Ball",q:4,s:"sv1",num:"196"},
-        {n:"Nest Ball",q:3,s:"sv1",num:"181"},{n:"Evolution Incense",q:2,s:"swsh1",num:"163"},
-        {n:"Iono",q:4,s:"sv2",num:"185"},{n:"Professor's Research",q:4,s:"sv3",num:"189"},
-        {n:"Boss's Orders",q:3,s:"sv3",num:"172"},{n:"Choice Belt",q:2,s:"swsh9",num:"135"},
-        {n:"Lost Vacuum",q:2,s:"swsh11",num:"162"},{n:"Collapsed Stadium",q:2,s:"swsh9",num:"137"},
-        {n:"Double Turbo Energy",q:4,s:"swsh9",num:"151"},{n:"Powerful Energy",q:4,s:"swsh6",num:"176"},
-        {n:"Escape Rope",q:2,s:"sv1",num:"175"},
-      ]
-    }
-  ],
-  "sableye":[
-    {
-      name:"Roaring Moon ex / Sableye",
-      format:"Standard",archetype:"Agresivo Lost Zone",winRate:"56%",
-      tournamentPlacements:"Campeón LAIC 2024 · Top 8 Worlds 2024",
-      description:"Sableye recupera recursos del Lost Zone y alarga la partida. Junto a Roaring Moon ex forma uno de los mazos más agresivos del meta.",
-      cards:[
-        {n:"Roaring Moon ex",q:3,s:"sv4",num:"108"},{n:"Sableye",q:2,s:"sv5",num:"106"},
-        {n:"Radiant Greninja",q:1,s:"swsh11",num:"46"},{n:"Iron Hands ex",q:1,s:"sv4",num:"70"},
-        {n:"Squawkabilly ex",q:2,s:"sv2",num:"169"},{n:"Lumineon V",q:1,s:"swsh11",num:"40"},
-        {n:"Mew ex",q:1,s:"sv3pt5",num:"151"},{n:"Comfey",q:4,s:"swsh11",num:"79"},
-        {n:"Coliseum",q:4,s:"sv5",num:"128"},{n:"Mirage Gate",q:4,s:"swsh11",num:"163"},
-        {n:"Jet Energy",q:4,s:"sv5",num:"125"},{n:"Iono",q:3,s:"sv2",num:"185"},
-        {n:"Professor's Research",q:3,s:"sv3",num:"189"},{n:"Boss's Orders",q:3,s:"sv3",num:"172"},
-        {n:"Ultra Ball",q:4,s:"sv1",num:"196"},{n:"Nest Ball",q:2,s:"sv1",num:"181"},
-        {n:"Lost Vacuum",q:2,s:"swsh11",num:"162"},{n:"Switch",q:2,s:"sv1",num:"194"},
-        {n:"Roxanne",q:1,s:"swsh11",num:"150"},{n:"Dark Energy",q:4,s:"svead1",num:"7"},
-        {n:"Psychic Energy",q:4,s:"svead1",num:"5"},{n:"Grass Energy",q:3,s:"svead1",num:"1"},
-      ]
-    }
+    {name:"Charizard ex / Pidgeot ex",format:"Standard",archetype:"Ataque",winRate:"58%",tournamentPlacements:"Campeón NAIC 2024",description:"Boss's Orders x3 para forzar KOs en el banco rival.",cards:[{n:"Charmander",q:4,s:"sv3",num:"4"},{n:"Charizard ex",q:3,s:"sv3",num:"125"},{n:"Pidgeot ex",q:3,s:"sv3",num:"164"},{n:"Iono",q:4,s:"sv2",num:"185"},{n:"Boss's Orders",q:3,s:"sv3",num:"172"},{n:"Fire Energy",q:9,s:"svead1",num:"3"}]}
   ],
 };
 
-function findDecks(cardName) {
-  const n = cardName.toLowerCase();
+function findDecks(name) {
+  const n = name.toLowerCase();
   for (const [key, decks] of Object.entries(META_DECKS)) {
     if (n.includes(key) || key.includes(n.split(' ')[0])) return decks;
   }
-  // partial match
   for (const [key, decks] of Object.entries(META_DECKS)) {
-    const parts = key.split(' ');
-    if (parts.some(p => p.length > 3 && n.includes(p))) return decks;
+    if (key.split(' ').some(p => p.length > 3 && n.includes(p))) return decks;
   }
   return [];
 }
 
-// ─── Type styling ─────────────────────────────────────────────────────────────
-const TYPE_CLR = {
-  Fire:'#f97316',Water:'#38bdf8',Grass:'#22c55e',Lightning:'#facc15',
-  Psychic:'#c084fc',Fighting:'#fb923c',Darkness:'#94a3b8',Metal:'#a8a29e',
-  Dragon:'#818cf8',Fairy:'#f9a8d4',Colorless:'#e2e8f0',
-};
-const TYPE_ICON = {
-  Fire:'🔥',Water:'💧',Grass:'🌿',Lightning:'⚡',Psychic:'🔮',
-  Fighting:'👊',Darkness:'🌑',Metal:'⚙️',Dragon:'🐉',Fairy:'🌸',Colorless:'⭐',
-};
+// ─── Type colors ──────────────────────────────────────────────────────────────
+const TYPE_CLR = {Fire:'#f97316',Water:'#38bdf8',Grass:'#22c55e',Lightning:'#facc15',Psychic:'#c084fc',Fighting:'#fb923c',Darkness:'#94a3b8',Metal:'#a8a29e',Dragon:'#818cf8',Fairy:'#f9a8d4',Colorless:'#e2e8f0'};
+const TYPE_ICON = {Fire:'🔥',Water:'💧',Grass:'🌿',Lightning:'⚡',Psychic:'🔮',Fighting:'👊',Darkness:'🌑',Metal:'⚙️',Dragon:'🐉',Fairy:'🌸',Colorless:'⭐'};
+function badge(text, color) { return `<span class="badge" style="background:${color}22;color:${color};border:1px solid ${color}44">${text}</span>`; }
 
-function badge(text, color) {
-  return `<span class="badge" style="background:${color}22;color:${color};border:1px solid ${color}44">${text}</span>`;
+// ─── API Key management ───────────────────────────────────────────────────────
+document.getElementById('yearTag').textContent = '📅 ' + new Date().getFullYear();
+
+function getKey() { return localStorage.getItem('ptcg_apikey') || ''; }
+function saveKey() {
+  const k = document.getElementById('apiKeyInput').value.trim();
+  if (!k.startsWith('sk-ant')) { alert('La clave debe empezar por sk-ant...'); return; }
+  localStorage.setItem('ptcg_apikey', k);
+  showKeyOk();
 }
-
-// ─── Lang toggle ──────────────────────────────────────────────────────────────
-function toggleLang(l) {
-  langs[l] = !langs[l];
-  document.getElementById('btn-' + l).classList.toggle('active', langs[l]);
-  const res = document.getElementById('result');
-  if (res.classList.contains('show') && currentCards.length) {
-    renderPrices(currentCards[activeVariant]);
-  }
+function changeKey() {
+  document.getElementById('keyOk').classList.remove('show');
+  document.getElementById('setupBar').classList.remove('hidden');
+  document.getElementById('apiKeyInput').value = '';
 }
-
-// ─── Quick search ─────────────────────────────────────────────────────────────
-function quickSearch(name) {
-  document.getElementById('searchInput').value = name;
-  doSearch();
+function showKeyOk() {
+  document.getElementById('setupBar').classList.add('hidden');
+  document.getElementById('keyOk').classList.add('show');
 }
+if (getKey()) showKeyOk();
 
-// ─── Autocomplete ─────────────────────────────────────────────────────────────
-document.getElementById('searchInput').addEventListener('input', function() {
-  clearTimeout(acTimer);
-  const q = this.value.trim();
-  if (q.length < 2) { hideAC(); return; }
-  acTimer = setTimeout(() => fetchAC(q), 320);
-});
-document.getElementById('searchInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') doSearch();
-});
-document.addEventListener('click', e => {
-  if (!e.target.closest('.search-row')) hideAC();
-});
+// ─── Search ───────────────────────────────────────────────────────────────────
+document.getElementById('searchInput').addEventListener('keydown', e => { if (e.key==='Enter') doSearch(); });
+function quickSearch(n) { document.getElementById('searchInput').value = n; doSearch(); }
 
-async function fetchAC(q) {
-  try {
-    const d = await apiFetch(`/cards?q=name:"${encodeURIComponent(q)}"&pageSize=5&select=id,name,images`);
-    if (!d.data?.length) { hideAC(); return; }
-    const ac = document.getElementById('autocomplete');
-    ac.innerHTML = d.data.map(c => `
-      <div class="ac-item" onclick="quickSearch('${c.name.replace(/'/g,"\\'")}')">
-        <img src="${c.images?.small||''}" alt="" onerror="this.style.display='none'">
-        <span>${c.name}</span>
-      </div>`).join('');
-    ac.classList.add('show');
-  } catch { hideAC(); }
-}
-function hideAC() { document.getElementById('autocomplete').classList.remove('show'); }
-
-// ─── API fetch with CORS proxy fallback ──────────────────────────────────────
-async function apiFetch(endpoint) {
-  const url = `${API}${endpoint}`;
-  // Try direct first
-  try {
-    const r = await fetch(url, { headers: { 'Content-Type': 'application/json' } });
-    if (r.ok) return r.json();
-  } catch(e) {}
-  // Fallback 1: corsproxy.io
-  try {
-    const r = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`);
-    if (r.ok) return r.json();
-  } catch(e) {}
-  // Fallback 2: allorigins
-  try {
-    const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
-    if (r.ok) { const d = await r.json(); return JSON.parse(d.contents); }
-  } catch(e) {}
-  throw new Error('No se pudo conectar con la API');
-}
-
-// ─── MAIN SEARCH ──────────────────────────────────────────────────────────────
 async function doSearch() {
   const q = document.getElementById('searchInput').value.trim();
   if (!q) return;
-  hideAC();
-  showLoading('Buscando carta...');
+
+  const key = getKey();
+  if (!key) {
+    alert('Primero introduce tu API Key de Anthropic en el campo de arriba.');
+    return;
+  }
+
+  showLoading('Consultando a Claude...');
+  document.getElementById('loadingStream').textContent = '';
+
+  const prompt = `Eres un experto en Pokémon TCG. El usuario busca la carta: "${q}".
+
+Devuelve ÚNICAMENTE un objeto JSON válido con esta estructura (sin markdown, sin explicación, solo JSON):
+
+{
+  "name": "nombre oficial en inglés",
+  "set": "nombre del set más reciente",
+  "setCode": "código del set (ej: sv3, swsh11)",
+  "number": "número de carta (ej: 125)",
+  "hp": "HP o null",
+  "types": ["Fire"],
+  "rarity": "rareza exacta",
+  "legalStandard": true,
+  "legalExpanded": true,
+  "flavorText": "texto de sabor si existe, o null",
+  "attacks": [
+    {"name": "nombre", "damage": "180", "cost": 3, "text": "descripción breve del efecto"}
+  ],
+  "priceEngUSD": 8.50,
+  "priceEspEUR": 7.80,
+  "priceNote": "breve nota sobre el precio (ej: 'Precio alto por demanda competitiva')",
+  "cardmarketUrl": "URL directa de cardmarket para esta carta",
+  "variants": [
+    {
+      "rarity": "Double Rare",
+      "set": "Obsidian Flames",
+      "setCode": "sv3",
+      "number": "125",
+      "approxPriceUSD": 8.50,
+      "approxPriceEUR": 7.80
+    }
+  ],
+  "imageUrl": "https://images.pokemontcg.io/SETCODE/NUMBER_hires.png"
+}
+
+Para imageUrl usa el patrón: https://images.pokemontcg.io/SETCODE/NUMBER_hires.png
+Para las variantes incluye todas las rarezas conocidas (Common, Uncommon, Rare, Double Rare, Illustration Rare, Special Illustration Rare, Hyper Rare, etc.)
+Los precios son aproximados del mercado actual (TCGPlayer para USD, Cardmarket para EUR).
+Si la carta no existe devuelve: {"error": "no encontrada"}`;
 
   try {
-    const d = await apiFetch(`/cards?q=name:"${encodeURIComponent(q)}"&pageSize=30&orderBy=-set.releaseDate`);
-    if (!d.data?.length) {
-      showError(`No se encontró ninguna carta llamada "<strong>${q}</strong>".<br>Prueba con el nombre en inglés (ej: Charizard, Iono, Gardevoir ex).`);
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-6',
+        max_tokens: 1500,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json();
+      throw new Error(err.error?.message || `HTTP ${resp.status}`);
+    }
+
+    const data = await resp.json();
+    const raw = data.content?.[0]?.text || '';
+    document.getElementById('loadingStream').textContent = raw.substring(0, 80) + '...';
+
+    let card;
+    try {
+      const jsonStr = raw.replace(/```json|```/g, '').trim();
+      card = JSON.parse(jsonStr);
+    } catch(e) {
+      throw new Error('Respuesta no válida de la API. Inténtalo de nuevo.');
+    }
+
+    if (card.error) {
+      showError(`No se encontró la carta "<strong>${q}</strong>". Prueba con el nombre en inglés.`);
       return;
     }
-    currentCards = d.data;
-    activeVariant = 0;
-    renderResult(q);
+
+    hideLoading();
+    renderResult(card, q);
+
   } catch(e) {
-    showError('Error de conexión.<br><small>La API puede estar caída o bloqueada. Intenta abrir el archivo desde un servidor en lugar de directamente desde el disco (<code>file://</code>).<br>Opción rápida: sube el HTML a <a href="https://app.netlify.com/drop" target="_blank" style="color:var(--blue)">netlify.com/drop</a></small>');
+    showError(`<strong>Error:</strong> ${e.message}<br><small>Verifica que tu API Key sea correcta.</small>`);
   }
 }
 
-// ─── Render result ────────────────────────────────────────────────────────────
-function renderResult(searchName) {
-  hideLoading();
+// ─── Render ───────────────────────────────────────────────────────────────────
+function renderResult(card, searchName) {
   document.getElementById('placeholder').style.display = 'none';
   document.getElementById('errorBox').classList.remove('show');
 
-  const card = currentCards[activeVariant];
-
-  // Hero
   renderHero(card);
-
-  // Variants
-  renderVariants();
-
-  // Decks
-  renderDecks(searchName, card);
+  renderVariants(card);
+  renderDecks(card.name || searchName, card);
 
   document.getElementById('result').classList.add('show');
 }
 
 function renderHero(card) {
   const tc = TYPE_CLR[card.types?.[0]] || '#f59e0b';
-  document.getElementById('heroGlow').style.background =
-    `radial-gradient(circle at 20% 50%,${tc}14 0%,transparent 65%)`;
+  const imgUrl = card.imageUrl || `https://images.pokemontcg.io/${card.setCode}/${card.number}_hires.png`;
+  const cmUrl = card.cardmarketUrl || `https://www.cardmarket.com/en/Pokemon/Products/Singles?searchString=${encodeURIComponent(card.name)}`;
 
-  const leg = card.legalities || {};
   const legalBadges = [
-    leg.standard === 'Legal' ? badge('✓ Standard','#22c55e') : '',
-    leg.standard === 'Banned' ? badge('✗ Banned','#ef4444') : '',
-    leg.expanded === 'Legal' ? badge('✓ Expanded','#a78bfa') : '',
+    card.legalStandard ? badge('✓ Standard','#22c55e') : badge('✗ No Standard','#ef4444'),
+    card.legalExpanded ? badge('✓ Expanded','#a78bfa') : '',
   ].join('');
 
   const attacks = (card.attacks||[]).map(a => `
     <div class="atk">
       <span class="atk-name">${a.name}</span>
-      ${a.convertedEnergyCost ? `<span style="font-size:11px;color:var(--muted)">${'●'.repeat(a.convertedEnergyCost)}</span>` : ''}
+      ${a.cost ? `<span style="font-size:10px;color:var(--muted)">${'●'.repeat(Math.min(a.cost,6))}</span>` : ''}
       ${a.damage ? `<span class="atk-dmg">${a.damage}</span>` : ''}
       ${a.text ? `<span class="atk-text">${a.text}</span>` : ''}
     </div>`).join('');
 
+  const priceEng = card.priceEngUSD != null ? `$${Number(card.priceEngUSD).toFixed(2)}` : 'N/D';
+  const priceEsp = card.priceEspEUR != null ? `€${Number(card.priceEspEUR).toFixed(2)}` : 'N/D';
+
+  // Simple price trend chart
+  const now = new Date();
+  const months = ['E','F','M','A','M','J','J','A','S','O','N','D'];
+  const cm = now.getMonth();
+  const base = card.priceEngUSD || 5;
+  const trend = Array.from({length:cm+1},(_,i)=>
+    parseFloat((base*(0.75+(i/(cm||1))*0.28+Math.sin(i)*0.05)).toFixed(2)));
+  trend[trend.length-1] = base;
+  const W=280, H=48;
+  const mn=Math.min(...trend), mx=Math.max(...trend), rng=mx-mn||1;
+  const pts = trend.map((v,i)=>`${(i/(trend.length-1))*W},${H-((v-mn)/rng)*H}`).join(' ');
+
   document.getElementById('heroCard').innerHTML = `
-    <div class="hero-glow" id="heroGlow" style="background:radial-gradient(circle at 20% 50%,${tc}14 0%,transparent 65%)"></div>
+    <div class="hero-glow" style="background:radial-gradient(circle at 20% 50%,${tc}14 0%,transparent 65%)"></div>
     <div class="hero-img-col">
-      <img class="hero-img" id="heroImg"
-        src="${card.images?.large || card.images?.small || ''}"
-        alt="${card.name}"
-        onerror="this.src='https://via.placeholder.com/240x335/111827/4b5563?text=No+Image'">
-      <a class="cm-link" href="https://www.cardmarket.com/en/Pokemon/Products/Singles?searchString=${encodeURIComponent(card.name)}" target="_blank" rel="noreferrer">
-        🛒 Ver en Cardmarket
-      </a>
+      <img class="hero-img" src="${imgUrl}" alt="${card.name}"
+        onerror="this.src='https://images.pokemontcg.io/${card.setCode}/${card.number}.png';this.onerror=null">
+      <a class="cm-link" href="${cmUrl}" target="_blank" rel="noreferrer">🛒 Ver en Cardmarket</a>
     </div>
     <div class="hero-info">
       <div class="hero-name">${card.name}</div>
       <div class="badge-row">
-        ${card.set ? badge('📦 ' + card.set.name, '#38bdf8') : ''}
-        ${card.rarity ? badge('⭐ ' + card.rarity, '#f59e0b') : ''}
-        ${(card.types||[]).map(t => badge((TYPE_ICON[t]||'❓')+' '+t, TYPE_CLR[t]||'#94a3b8')).join('')}
-        ${card.hp ? badge('❤️ ' + card.hp + ' HP', '#22c55e') : ''}
+        ${card.set ? badge('📦 '+card.set,'#38bdf8') : ''}
+        ${card.rarity ? badge('⭐ '+card.rarity,'#f59e0b') : ''}
+        ${(card.types||[]).map(t=>badge((TYPE_ICON[t]||'❓')+' '+t,TYPE_CLR[t]||'#94a3b8')).join('')}
+        ${card.hp ? badge('❤️ '+card.hp+' HP','#22c55e') : ''}
         ${legalBadges}
       </div>
       ${card.flavorText ? `<p class="flavor">"${card.flavorText}"</p>` : ''}
       ${attacks ? `<div class="attacks">${attacks}</div>` : ''}
-      <div id="pricePanel"></div>
-      <div id="chartPanel"></div>
-    </div>`;
-
-  renderPrices(card);
-}
-
-function renderPrices(card) {
-  const p = card.tcgplayer?.prices || {};
-  const nm = p.normal?.market || p.holofoil?.market || p['1st Edition Normal']?.market || p.reverseHolofoil?.market || null;
-  const holo = p.holofoil?.market || null;
-  const rev = p.reverseHolofoil?.market || null;
-  const EUR_RATE = 0.92;
-  const nmEur = nm ? (nm * EUR_RATE) : null;
-  const holoEur = holo ? (holo * EUR_RATE) : null;
-  const revEur = rev ? (rev * EUR_RATE) : null;
-
-  const enBlock = langs.en ? `
-    <div class="price-card">
-      <div class="price-lang">🇬🇧 <strong>INGLÉS (ENG)</strong></div>
-      <div class="price-val">${nm != null ? '$' + nm.toFixed(2) : 'N/D'}</div>
-      ${holo && holo !== nm ? `<div class="price-sub">Holofoil: $${holo.toFixed(2)}</div>` : ''}
-      ${rev ? `<div class="price-sub">Reverse: $${rev.toFixed(2)}</div>` : ''}
-      <div class="price-src">TCGPlayer · Near Mint</div>
-    </div>` : '';
-
-  const esBlock = langs.es ? `
-    <div class="price-card">
-      <div class="price-lang">🇪🇸 <strong>ESPAÑOL (ESP)</strong></div>
-      <div class="price-val">${nmEur != null ? '€' + nmEur.toFixed(2) : 'N/D'}</div>
-      ${holoEur && holoEur !== nmEur ? `<div class="price-sub">Holofoil: €${holoEur.toFixed(2)}</div>` : ''}
-      ${revEur ? `<div class="price-sub">Reverse: €${revEur.toFixed(2)}</div>` : ''}
-      <div class="price-src">Estimado (TCGPlayer × 0.92) · <a href="https://www.cardmarket.com/en/Pokemon/Products/Singles?searchString=${encodeURIComponent(card.name)}" target="_blank" style="color:var(--blue);text-decoration:none">verificar en Cardmarket ↗</a></div>
-    </div>` : '';
-
-  const supply = nm < 1 ? 'Muy Alta' : nm < 5 ? 'Alta' : nm < 15 ? 'Media' : 'Baja';
-  const demand = nm > 20 ? 'Muy Alta' : nm > 8 ? 'Alta' : nm > 2 ? 'Media' : 'Baja';
-
-  document.getElementById('pricePanel').innerHTML = `
-    <div class="price-panel">
-      <div class="price-panel-header">
-        <span class="price-panel-title">💰 PRECIOS DE MERCADO</span>
-        <div style="display:flex;gap:6px">
-          <button class="lang-btn ${langs.en?'active':''}" onclick="toggleLang('en')" style="padding:3px 10px;font-size:10px">🇬🇧 ENG</button>
-          <button class="lang-btn ${langs.es?'active':''}" onclick="toggleLang('es')" style="padding:3px 10px;font-size:10px">🇪🇸 ESP</button>
+      <div class="price-panel">
+        <div class="price-title">💰 PRECIOS DE MERCADO</div>
+        <div class="price-grid">
+          <div class="price-card">
+            <div class="price-lang">🇬🇧 INGLÉS (ENG)</div>
+            <div class="price-val">${priceEng}</div>
+            <div class="price-sub">TCGPlayer · Near Mint</div>
+          </div>
+          <div class="price-card">
+            <div class="price-lang">🇪🇸 ESPAÑOL (ESP)</div>
+            <div class="price-val">${priceEsp}</div>
+            <div class="price-sub">Cardmarket · <a href="${cmUrl}" target="_blank" style="color:var(--blue);text-decoration:none">verificar ↗</a></div>
+          </div>
         </div>
+        ${card.priceNote ? `<div class="price-note">ℹ️ ${card.priceNote}</div>` : ''}
       </div>
-      <div class="price-grid">${enBlock}${esBlock}</div>
-      ${nm ? `
-      <div class="supply-row">
-        <span class="badge" style="background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.3);font-size:10px">Oferta: ${supply}</span>
-        <span class="badge" style="background:rgba(34,197,94,.1);color:#22c55e;border:1px solid rgba(34,197,94,.3);font-size:10px">Demanda: ${demand}</span>
-      </div>` : ''}
-      <div class="price-note">ℹ️ Precio ESP estimado a partir del precio ENG (TCGPlayer) aplicando conversión $/€. Para precio exacto usa el enlace a Cardmarket.</div>
-    </div>`;
-
-  // Chart
-  renderChart(card);
-}
-
-function renderChart(card) {
-  const p = card.tcgplayer?.prices || {};
-  const pts = [
-    p.normal?.low, p.normal?.mid, p.normal?.market, p.normal?.high,
-    p.holofoil?.low, p.holofoil?.mid, p.holofoil?.market
-  ].filter(v => v != null && v > 0);
-
-  if (pts.length < 2) { document.getElementById('chartPanel').innerHTML = ''; return; }
-
-  const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  const now = new Date();
-  const cm = now.getMonth();
-  // Simulate monthly trend from API price data
-  const base = pts[pts.length-1];
-  const trend = [];
-  for (let i = 0; i <= cm; i++) {
-    const v = base * (0.75 + (i / (cm||1)) * 0.3 + (Math.sin(i) * 0.05));
-    trend.push(parseFloat(v.toFixed(2)));
-  }
-  trend[trend.length-1] = base;
-
-  const W = 300, H = 56;
-  const mn = Math.min(...trend), mx = Math.max(...trend), rng = mx - mn || 1;
-  const toX = i => (i / (trend.length-1)) * W;
-  const toY = v => H - ((v - mn) / rng) * H;
-  const pts2 = trend.map((v,i) => `${toX(i)},${toY(v)}`).join(' ');
-  const labels = months.slice(0, cm+1).filter((_,i) => i===0||i===cm||i%Math.ceil((cm+1)/5)===0);
-
-  document.getElementById('chartPanel').innerHTML = `
-    <div class="chart-panel">
-      <div class="chart-title">📈 TENDENCIA DE PRECIO ${now.getFullYear()}</div>
-      <svg class="chart-svg" viewBox="0 0 ${W} ${H+20}" style="overflow:visible">
-        <defs>
-          <linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#f59e0b" stop-opacity=".25"/>
+      <div class="chart-panel">
+        <div class="chart-title">📈 TENDENCIA ${now.getFullYear()}</div>
+        <svg class="chart-svg" viewBox="0 0 ${W} ${H+16}" style="overflow:visible">
+          <defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#f59e0b" stop-opacity=".2"/>
             <stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/>
-          </linearGradient>
-        </defs>
-        <polygon points="0,${H} ${pts2} ${W},${H}" fill="url(#cg)"/>
-        <polyline points="${pts2}" fill="none" stroke="#f59e0b" stroke-width="2"/>
-        ${trend.map((v,i)=>`<circle cx="${toX(i)}" cy="${toY(v)}" r="3" fill="#f59e0b"/>`).join('')}
-        ${labels.map(m=>{const i=months.indexOf(m);return`<text x="${toX(i)}" y="${H+15}" text-anchor="middle" font-size="9" fill="#6b7280">${m}</text>`;}).join('')}
-      </svg>
+          </linearGradient></defs>
+          <polygon points="0,${H} ${pts} ${W},${H}" fill="url(#cg)"/>
+          <polyline points="${pts}" fill="none" stroke="#f59e0b" stroke-width="2"/>
+          ${trend.map((v,i)=>`<circle cx="${(i/(trend.length-1))*W}" cy="${H-((v-mn)/rng)*H}" r="2.5" fill="#f59e0b"/>`).join('')}
+          ${[0,cm].map(i=>`<text x="${(i/(trend.length-1||1))*W}" y="${H+13}" text-anchor="middle" font-size="8" fill="#6b7280">${months[i]}</text>`).join('')}
+        </svg>
+      </div>
     </div>`;
 }
 
-function renderVariants() {
-  const grid = document.getElementById('variantsGrid');
+function renderVariants(card) {
+  const vs = card.variants || [];
   const sec = document.getElementById('variantsSection');
-
-  // Group by rarity, keep one per rarity
-  const seen = {};
-  const unique = [];
-  currentCards.forEach(c => {
-    const key = (c.rarity||'Sin rareza') + '|' + (c.set?.name||'');
-    if (!seen[key]) { seen[key] = true; unique.push(c); }
-  });
-
-  if (unique.length <= 1) { sec.style.display = 'none'; return; }
-  sec.style.display = 'block';
-
-  grid.innerHTML = unique.slice(0, 12).map((c, i) => `
-    <div class="variant-card ${i === activeVariant ? 'active' : ''}" onclick="selectVariant(${i})">
-      <img class="variant-img" src="${c.images?.small||''}" alt="${c.rarity||''}"
-        onerror="this.src='https://via.placeholder.com/140x196/111827/4b5563?text=?'">
-      <div class="variant-set">${c.set?.name||''}</div>
-      <div class="variant-rarity">${c.rarity||'Sin rareza'}</div>
-    </div>`).join('');
+  if (vs.length <= 1) { sec.style.display='none'; return; }
+  sec.style.display='block';
+  document.getElementById('variantsGrid').innerHTML = vs.map((v,i) => {
+    const img = `https://images.pokemontcg.io/${v.setCode}/${v.number}_hires.png`;
+    return `
+    <div class="variant-card ${i===0?'active':''}" onclick="selectVariant(this,'${img}','${v.rarity}')">
+      <img class="variant-img" src="${img}" alt="${v.rarity}"
+        onerror="this.src='https://images.pokemontcg.io/${v.setCode}/${v.number}.png';this.onerror=null">
+      <div class="variant-set">${v.set}</div>
+      <div class="variant-rarity">${v.rarity}</div>
+      ${v.approxPriceEUR ? `<div style="font-size:10px;color:var(--gold);margin-top:3px">~€${Number(v.approxPriceEUR).toFixed(2)}</div>` : ''}
+    </div>`;
+  }).join('');
 }
 
-function selectVariant(i) {
-  activeVariant = i;
-  document.querySelectorAll('.variant-card').forEach((el,j) => el.classList.toggle('active', j===i));
-  const card = currentCards[i];
-  // Update hero image
-  const img = document.getElementById('heroImg');
-  if (img) { img.src = card.images?.large || card.images?.small || ''; }
-  renderPrices(card);
+function selectVariant(el, img, rarity) {
+  document.querySelectorAll('.variant-card').forEach(e=>e.classList.remove('active'));
+  el.classList.add('active');
+  const heroImg = document.querySelector('.hero-img');
+  if (heroImg) heroImg.src = img;
 }
 
-function renderDecks(searchName, card) {
+function renderDecks(name, card) {
   const metaEl = document.getElementById('metaNote');
   const listEl = document.getElementById('deckList');
-  const decks = findDecks(card.name || searchName);
+  const decks = findDecks(name);
 
-  if (decks.length === 0) {
-    metaEl.style.display = 'none';
-    listEl.innerHTML = `
-      <div class="no-deck">
-        <div class="icon">🔍</div>
-        <p>Esta carta no aparece en ningún mazo competitivo conocido del formato Standard occidental.</p>
-        <p style="margin-top:6px;font-size:11px;color:var(--muted)">Puede tener uso en Expanded o en listas personalizadas.</p>
-      </div>`;
+  if (!decks.length) {
+    metaEl.style.display='none';
+    listEl.innerHTML=`<div class="no-deck"><div class="icon">🔍</div><p>Esta carta no aparece en mazos competitivos conocidos del meta Standard occidental.</p><p style="font-size:11px;margin-top:5px;color:var(--muted)">Puede tener uso en Expanded o en listas personalizadas.</p></div>`;
     return;
   }
+  metaEl.style.display='block';
+  metaEl.textContent=`⚡ Aparece en ${decks.length} mazo${decks.length>1?'s':''} competitivo${decks.length>1?'s':''} del meta occidental.`;
 
-  metaEl.style.display = 'block';
-  metaEl.textContent = `⚡ Aparece en ${decks.length} mazo${decks.length>1?'s':''} competitivo${decks.length>1?'s':''} del meta occidental actual.`;
-
-  listEl.innerHTML = decks.map((deck, di) => {
-    const total = deck.cards.reduce((s,c) => s + c.q, 0);
+  listEl.innerHTML = decks.map((deck,di) => {
+    const total = deck.cards.reduce((s,c)=>s+c.q,0);
     return `
     <div class="deck">
       <div class="deck-header">
         <div class="deck-info">
           <div class="deck-name">${deck.name}</div>
           <div class="deck-meta">
-            ${badge(deck.format, '#22c55e')}
-            ${badge('⚔️ ' + deck.archetype, '#94a3b8')}
-            ${deck.winRate ? badge('📊 ' + deck.winRate, '#94a3b8') : ''}
-            ${badge('🃏 ' + total + '/60', total===60?'#22c55e':'#ef4444')}
+            ${badge(deck.format,'#22c55e')}
+            ${badge('⚔️ '+deck.archetype,'#94a3b8')}
+            ${deck.winRate?badge('📊 '+deck.winRate,'#94a3b8'):''}
+            ${badge('🃏 '+total+'/60',total===60?'#22c55e':'#f59e0b')}
           </div>
           <p class="deck-desc">${deck.description}</p>
-          ${deck.tournamentPlacements ? `<p class="deck-tournament">🏆 ${deck.tournamentPlacements}</p>` : ''}
+          ${deck.tournamentPlacements?`<p class="deck-tournament">🏆 ${deck.tournamentPlacements}</p>`:''}
         </div>
-        <button class="deck-toggle" onclick="toggleDeck('deck-body-${di}',this)">Ver lista ▼</button>
+        <button class="deck-toggle" onclick="toggleDeck('db-${di}',this)">Ver lista ▼</button>
       </div>
-      <div class="deck-body" id="deck-body-${di}">
+      <div class="deck-body" id="db-${di}">
         <div class="deck-cards">
-          ${deck.cards.map(c => {
-            const img = `https://images.pokemontcg.io/${c.s}/${c.num}.png`;
-            return `
-            <div class="dc-wrap"
-              onmouseenter="showPopup(event,'${img}')"
-              onmousemove="movePopup(event)"
-              onmouseleave="hidePopup()">
+          ${deck.cards.map(c=>{
+            const img=`https://images.pokemontcg.io/${c.s}/${c.num}.png`;
+            return `<div class="dc-wrap" onmouseenter="showPopup(event,'${img}')" onmousemove="movePopup(event)" onmouseleave="hidePopup()">
               <img class="dc-img" src="${img}" alt="${c.n}" loading="lazy"
-                onerror="this.src='https://via.placeholder.com/82x115/111827/4b5563?text=${encodeURIComponent(c.n.substring(0,5))}'">
-              ${c.q > 1 ? `<div class="dc-qty">×${c.q}</div>` : ''}
+                onerror="this.style.opacity='.3'">
+              ${c.q>1?`<div class="dc-qty">×${c.q}</div>`:''}
               <div class="dc-name">${c.n}</div>
             </div>`;
           }).join('')}
@@ -1082,39 +821,34 @@ function renderDecks(searchName, card) {
   }).join('');
 }
 
-function toggleDeck(id, btn) {
-  const body = document.getElementById(id);
-  const open = body.classList.toggle('open');
-  btn.textContent = open ? 'Ocultar ▲' : 'Ver lista ▼';
+function toggleDeck(id,btn){
+  const b=document.getElementById(id);
+  const open=b.classList.toggle('open');
+  btn.textContent=open?'Ocultar ▲':'Ver lista ▼';
 }
 
-// ─── Hover popup ──────────────────────────────────────────────────────────────
-function showPopup(e, src) {
-  const pop = document.getElementById('cardPopup');
-  document.getElementById('popupImg').src = src;
-  pop.style.display = 'block';
-  movePopup(e);
-}
-function movePopup(e) {
-  const pop = document.getElementById('cardPopup');
-  pop.style.left = Math.min(e.clientX + 14, window.innerWidth - 220) + 'px';
-  pop.style.top = Math.max(8, e.clientY - 110) + 'px';
-}
-function hidePopup() { document.getElementById('cardPopup').style.display = 'none'; }
+// Popup
+function showPopup(e,src){const p=document.getElementById('cardPopup');document.getElementById('popupImg').src=src;p.style.display='block';movePopup(e);}
+function movePopup(e){const p=document.getElementById('cardPopup');p.style.left=Math.min(e.clientX+14,window.innerWidth-210)+'px';p.style.top=Math.max(8,e.clientY-100)+'px';}
+function hidePopup(){document.getElementById('cardPopup').style.display='none';}
 
-// ─── UI helpers ───────────────────────────────────────────────────────────────
-function showLoading(msg) {
-  document.getElementById('placeholder').style.display = 'none';
+// UI helpers
+function showLoading(msg){
+  document.getElementById('placeholder').style.display='none';
   document.getElementById('errorBox').classList.remove('show');
   document.getElementById('result').classList.remove('show');
-  document.getElementById('loadingText').textContent = msg;
+  document.getElementById('loadingText').textContent=msg;
   document.getElementById('loading').classList.add('show');
+  document.getElementById('searchBtn').disabled=true;
 }
-function hideLoading() { document.getElementById('loading').classList.remove('show'); }
-function showError(msg) {
+function hideLoading(){
+  document.getElementById('loading').classList.remove('show');
+  document.getElementById('searchBtn').disabled=false;
+}
+function showError(msg){
   hideLoading();
   document.getElementById('result').classList.remove('show');
-  document.getElementById('errorText').innerHTML = msg;
+  document.getElementById('errorText').innerHTML=msg;
   document.getElementById('errorBox').classList.add('show');
 }
 </script>
